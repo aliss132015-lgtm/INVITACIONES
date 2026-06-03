@@ -1953,7 +1953,7 @@
         </details>
 
         <details>
-          <summary><i data-lucide="badge-check"></i> Invitado</summary>
+          <summary><i data-lucide="badge-check"></i> Invitado (opcional)</summary>
           <div class="field-grid">
             <div class="field full">
               <label for="guestName">Nombre del invitado</label>
@@ -2189,7 +2189,6 @@
     const GH_REPO    = "INVITACIONES";
 
     const sectionMeta = [
-      ["guest", "Pase personalizado"],
       ["countdown", "Cuenta regresiva"],
       ["itinerary", "Itinerario"],
       ["locations", "Ubicaciones"],
@@ -2289,7 +2288,7 @@
       songsTitle: "Sugerencia de Canciones",
       songsText: "¿Qué canción no puede faltar en nuestra fiesta?",
       sections: {
-        guest: true,
+        guest: false,
         countdown: true,
         itinerary: true,
         locations: true,
