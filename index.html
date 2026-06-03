@@ -1,0 +1,2689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Constructor de Invitaciones</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --paper: #f7f2ea;
+      --panel: #fffaf2;
+      --ink: #2f2924;
+      --muted: #786e64;
+      --line: #e4d8c7;
+      --gold: #b98e54;
+      --sage: #78866b;
+      --rose: #b7747a;
+      --blue: #476f8a;
+      --shadow: 0 22px 70px rgba(47, 41, 36, .13);
+      --radius: 8px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Jost", Arial, sans-serif;
+      background:
+        linear-gradient(135deg, rgba(120,134,107,.14), transparent 38%),
+        linear-gradient(225deg, rgba(183,116,122,.13), transparent 42%),
+        var(--paper);
+      color: var(--ink);
+    }
+
+    button, input, textarea, select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 390px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 250, 242, .92);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand {
+      padding: 24px 24px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-family: "Cormorant Garamond", serif;
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: .04em;
+    }
+
+    .brand p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: .86rem;
+      line-height: 1.5;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 16px 24px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      color: var(--ink);
+      background: #fff;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+      text-decoration: none;
+      font-size: .84rem;
+      font-weight: 500;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--gold);
+    }
+
+    .btn.primary {
+      color: #fff;
+      background: var(--ink);
+      grid-column: span 2;
+    }
+
+    .btn.ghost {
+      border-color: var(--line);
+      color: var(--muted);
+    }
+
+    .btn.icon {
+      width: 40px;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+
+    .editor {
+      padding: 0 24px 32px;
+    }
+
+    details {
+      border-bottom: 1px solid var(--line);
+      padding: 14px 0;
+    }
+
+    details[open] summary {
+      color: var(--ink);
+    }
+
+    summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      list-style: none;
+      color: var(--muted);
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 11px;
+      outline: none;
+    }
+
+    input[type="color"] {
+      min-height: 42px;
+      padding: 4px;
+    }
+
+    input[type="file"] {
+      padding: 8px;
+      font-size: .78rem;
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(185, 142, 84, .14);
+    }
+
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+    }
+
+    .switch-row span {
+      color: var(--ink);
+      font-size: .9rem;
+    }
+
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex: 0 0 auto;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: #d8d0c5;
+      transition: background .18s ease;
+    }
+
+    .slider::after {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,.18);
+      transition: transform .18s ease;
+    }
+
+    .switch input:checked + .slider {
+      background: var(--sage);
+    }
+
+    .switch input:checked + .slider::after {
+      transform: translateX(20px);
+    }
+
+    .list-editor {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .icon-gallery {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .icon-choice {
+      display: grid;
+      place-items: center;
+      gap: 5px;
+      min-height: 64px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--muted);
+      padding: 8px 4px;
+    }
+
+    .icon-choice:hover,
+    .icon-choice.active {
+      color: var(--ink);
+      border-color: var(--gold);
+      background: color-mix(in srgb, var(--gold) 10%, white);
+    }
+
+    .icon-choice svg {
+      width: 25px;
+      height: 25px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .icon-choice small {
+      font-size: .62rem;
+      color: currentColor;
+    }
+
+    .guest-links {
+      display: grid;
+      gap: 8px;
+      max-height: 220px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 8px;
+    }
+
+    .guest-link-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border-radius: var(--radius);
+      background: var(--paper);
+      font-size: .78rem;
+    }
+
+    .guest-link-row code {
+      color: var(--muted);
+      word-break: break-all;
+    }
+
+    .list-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 40px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .list-row.itinerary-row {
+      grid-template-columns: 92px 1fr 92px 44px 44px;
+    }
+
+    .icon-preview-btn {
+      width: 44px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--muted);
+    }
+
+    .icon-preview-btn:hover,
+    .icon-preview-btn.active {
+      color: var(--ink);
+      border-color: var(--gold);
+      background: color-mix(in srgb, var(--gold) 10%, white);
+    }
+
+    .icon-preview-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .list-row.gallery {
+      grid-template-columns: 1fr 40px;
+    }
+
+    .workspace {
+      min-width: 0;
+      padding: 26px;
+    }
+
+    .top-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .top-strip h2 {
+      margin: 0;
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      font-weight: 300;
+      line-height: 1;
+    }
+
+    .top-strip p {
+      margin: 8px 0 0;
+      color: var(--muted);
+    }
+
+    .device-actions {
+      display: inline-flex;
+      gap: 8px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.52);
+    }
+
+    .preview-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: calc(100vh - 150px);
+    }
+
+    .preview-frame {
+      position: relative;
+      width: min(100%, 430px);
+      height: calc(100vh - 150px);
+      min-height: 680px;
+      overflow: auto;
+      border: 10px solid #221f1c;
+      border-radius: 32px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      transition: width .22s ease, border-radius .22s ease;
+    }
+
+    #preview {
+      min-height: 100%;
+    }
+
+    .preview-frame .invite-gate {
+      position: absolute;
+    }
+
+    .preview-frame.desktop {
+      width: min(100%, 940px);
+      border-radius: 12px;
+    }
+
+    .invitation {
+      --accent: #b98e54;
+      --accent2: #78866b;
+      --bg: #f7f2ea;
+      --text: #2f2924;
+      --soft: #fffaf2;
+      --panel-rgb: 120, 134, 107;
+      --panel-alpha: .72;
+      --icon-color: #ffffff;
+      --icon-size: 54px;
+      --paper-bg: #f7f5ef;
+      font-family: "Jost", Arial, sans-serif;
+      background:
+        linear-gradient(rgba(247,242,234,.18), rgba(247,242,234,.18)),
+        var(--page-bg, var(--bg));
+      background-attachment: fixed;
+      background-size: cover;
+      background-position: center;
+      color: var(--text);
+      min-height: 100%;
+    }
+
+    .invite-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      background: var(--gate-bg, #f4dddd);
+      transition: opacity .7s ease, visibility .7s ease;
+    }
+
+    .invite-gate.is-open {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .gate-center {
+      position: relative;
+      display: grid;
+      place-items: center;
+      gap: 18px;
+      transform: translateY(8px);
+      animation: gateFloat 2.8s ease-in-out infinite;
+    }
+
+    .gate-button {
+      position: relative;
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 22px;
+      background: var(--accent2);
+      color: #fff;
+      font-family: "Cormorant Garamond", serif;
+      font-size: 1.15rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    }
+
+    .gate-button::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -10px;
+      transform: translateX(-50%);
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 10px solid var(--accent2);
+    }
+
+    .gate-mark {
+      width: 118px;
+      height: 118px;
+      display: grid;
+      place-items: center;
+      border: 1px solid color-mix(in srgb, var(--accent) 58%, white);
+      transform: rotate(45deg);
+      background: rgba(255,255,255,.28);
+      box-shadow: 0 0 0 10px rgba(255,255,255,.12);
+    }
+
+    .gate-mark span {
+      transform: rotate(-45deg);
+      font-family: "Cormorant Garamond", serif;
+      font-size: 2rem;
+      color: var(--accent);
+    }
+
+    .gate-mark img {
+      width: 112%;
+      height: 112%;
+      object-fit: contain;
+      transform: rotate(-45deg);
+    }
+
+    .invite-gate[data-gate="envelope"] .gate-mark {
+      width: 170px;
+      height: 112px;
+      border-radius: 2px;
+      transform: none;
+      clip-path: polygon(0 0, 100% 0, 100% 78%, 50% 100%, 0 78%);
+    }
+
+    .invite-gate[data-gate="envelope"] .gate-mark::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, transparent 49%, rgba(185,142,84,.42) 50%, transparent 51%),
+        linear-gradient(215deg, transparent 49%, rgba(185,142,84,.42) 50%, transparent 51%);
+    }
+
+    .invite-gate[data-gate="curtain"]::before,
+    .invite-gate[data-gate="curtain"]::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      background: color-mix(in srgb, var(--accent2) 70%, #222);
+      transition: transform .8s ease;
+    }
+
+    .invite-gate[data-gate="curtain"]::before { left: 0; }
+    .invite-gate[data-gate="curtain"]::after { right: 0; }
+    .invite-gate[data-gate="curtain"].is-open::before { transform: translateX(-100%); }
+    .invite-gate[data-gate="curtain"].is-open::after { transform: translateX(100%); }
+
+    @keyframes gateFloat {
+      0%, 100% { transform: translateY(8px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .hero-invite {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      isolation: isolate;
+      padding: 58px 24px;
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(145deg, rgba(32,28,24,.62), rgba(32,28,24,.24)), var(--hero-bg, transparent);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .hero-invite::before {
+      content: "";
+      position: absolute;
+      inset: 16px;
+      border: 1px solid rgba(255,255,255,.36);
+      z-index: -1;
+    }
+
+    .hero-invite::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 50% 18%, rgba(255,255,255,.18), transparent 30%);
+      z-index: -2;
+    }
+
+    .invite-kicker {
+      margin: 0 0 24px;
+      font-size: .72rem;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.82);
+    }
+
+    .invite-monogram {
+      width: 86px;
+      height: 86px;
+      margin: 0 auto 26px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.52);
+      border-radius: 50%;
+      font-family: "Cormorant Garamond", serif;
+      font-size: 2.2rem;
+      color: #fff;
+    }
+
+    .invite-title {
+      margin: 0;
+      font-family: var(--title-font, "Cormorant Garamond", serif);
+      font-size: clamp(4rem, 13vw, 7.8rem);
+      font-weight: 300;
+      line-height: .86;
+      white-space: pre-line;
+    }
+
+    .invite-date {
+      margin-top: 28px;
+      color: rgba(255,255,255,.86);
+      font-size: .85rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+    }
+
+    .invite-phrase {
+      max-width: 560px;
+      margin: 26px auto 0;
+      font-family: "Cormorant Garamond", serif;
+      font-size: 1.32rem;
+      font-style: italic;
+      line-height: 1.6;
+      color: rgba(255,255,255,.8);
+    }
+
+    .music-floating {
+      position: sticky;
+      top: 14px;
+      left: 100%;
+      z-index: 5;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      margin: 14px;
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: 50%;
+      background: rgba(47,41,36,.42);
+      color: #fff;
+      backdrop-filter: blur(8px);
+    }
+
+    .invite-section {
+      padding: clamp(54px, 9vw, 94px) 24px;
+      border-bottom: 1px solid rgba(47,41,36,.08);
+      background: transparent;
+    }
+
+    .invite-inner {
+      padding: clamp(28px, 5vw, 54px);
+      background: rgba(var(--panel-rgb), var(--panel-alpha));
+      color: #fff;
+      box-shadow: 0 22px 90px rgba(0,0,0,.08);
+      backdrop-filter: blur(2px);
+    }
+
+    .invite-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .section-icon {
+      display: grid;
+      place-items: center;
+      width: var(--icon-size);
+      height: var(--icon-size);
+      margin: 0 auto 18px;
+      border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
+      border-radius: 50%;
+      color: var(--icon-color);
+      font-size: 1.45rem;
+    }
+
+    .section-icon svg,
+    .timeline-center-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .section-icon svg {
+      width: 34px;
+      height: 34px;
+    }
+
+    .invite-section h3 {
+      margin: 0;
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(2rem, 7vw, 3.4rem);
+      font-weight: 300;
+      line-height: 1.08;
+      color: #fff;
+    }
+
+    .invite-section p {
+      color: rgba(255,255,255,.85);
+      line-height: 1.75;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(26px);
+      transition: opacity .8s ease, transform .8s ease, filter .8s ease;
+    }
+
+    .reveal.in-view {
+      opacity: 1;
+      transform: none;
+    }
+
+    .invitation[data-effect="zoom"] .reveal { transform: scale(.94); }
+    .invitation[data-effect="float"] .reveal { transform: translateY(34px) rotate(-1deg); filter: blur(2px); }
+    .invitation[data-effect="float"] .reveal.in-view { filter: blur(0); }
+    .invitation[data-effect="none"] .reveal { opacity: 1; transform: none; filter: none; }
+
+    .guest-card {
+      background: var(--accent2);
+      color: var(--text);
+      text-align: center;
+      padding: 44px 24px;
+    }
+
+    .pass-card {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: clamp(28px, 6vw, 54px);
+      background:
+        linear-gradient(rgba(255,255,255,.78), rgba(255,255,255,.78)),
+        radial-gradient(circle at 20% 30%, rgba(0,0,0,.06), transparent 28%),
+        var(--paper-bg);
+      box-shadow: 0 14px 46px rgba(0,0,0,.12);
+      font-family: "Cormorant Garamond", serif;
+    }
+
+    .pass-kicker {
+      margin: 0 0 14px;
+      font-size: 1.2rem;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .pass-card strong {
+      display: block;
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(2.7rem, 9vw, 4.8rem);
+      font-weight: 300;
+      line-height: .95;
+    }
+
+    .guest-card span {
+      display: block;
+      margin-top: 8px;
+      color: var(--text);
+      font-size: .76rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .children-policy {
+      margin-top: 24px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .children-policy svg {
+      width: 18px;
+      height: 18px;
+      margin-left: 6px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vertical-align: -2px;
+    }
+
+    .pass-number {
+      margin-top: 10px;
+      font-size: clamp(4rem, 14vw, 6rem);
+      line-height: .9;
+    }
+
+    .pass-label {
+      font-size: 1.25rem;
+    }
+
+    .qr-box {
+      width: 168px;
+      height: 168px;
+      margin: 22px auto 14px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .qr-box img {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .pass-footer {
+      font-size: 1.08rem;
+      line-height: 1.55;
+    }
+
+    .countdown {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .count-item {
+      padding: 18px 8px;
+      border: 1px solid rgba(47,41,36,.1);
+      background: rgba(255,255,255,.4);
+      border-radius: var(--radius);
+    }
+
+    .count-item strong {
+      display: block;
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(2rem, 8vw, 3rem);
+      font-weight: 300;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .count-item span {
+      display: block;
+      margin-top: 8px;
+      color: color-mix(in srgb, var(--text) 65%, white);
+      font-size: .68rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      margin-top: 26px;
+      text-align: left;
+    }
+
+    .timeline.centerline {
+      position: relative;
+      grid-template-columns: 1fr 88px 1fr;
+      align-items: center;
+      gap: 0 18px;
+      text-align: center;
+    }
+
+    .timeline.centerline::before {
+      content: "";
+      position: absolute;
+      top: 34px;
+      bottom: 34px;
+      left: 50%;
+      width: 1px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,.68);
+    }
+
+    .timeline.centerline .timeline-row {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+      align-items: center;
+      min-height: calc(var(--icon-size) * 1.75);
+    }
+
+    .timeline-center-icon {
+      position: relative;
+      z-index: 1;
+      grid-column: 2;
+      display: grid;
+      place-items: center;
+      width: calc(var(--icon-size) * 1.35);
+      height: calc(var(--icon-size) * 1.35);
+      margin: 14px auto;
+      color: var(--icon-color);
+      background: rgba(var(--panel-rgb), .35);
+      border-radius: 50%;
+    }
+
+    .timeline-center-icon svg {
+      width: calc(var(--icon-size) * 1.08);
+      height: calc(var(--icon-size) * 1.08);
+    }
+
+    .timeline.centerline .timeline-row[data-side="left"] .timeline-copy {
+      grid-column: 1;
+      text-align: right;
+    }
+
+    .timeline.centerline .timeline-row[data-side="right"] .timeline-copy {
+      grid-column: 3;
+      text-align: left;
+    }
+
+    .timeline.centerline .timeline-row[data-side="right"] .timeline-copy {
+      grid-row: 1;
+    }
+
+    .timeline-copy strong {
+      display: block;
+      font-family: var(--title-font, "Cormorant Garamond", serif);
+      font-size: 1.6rem;
+      font-weight: 300;
+      color: #fff;
+    }
+
+    .timeline-copy time {
+      color: rgba(255,255,255,.9);
+      font-size: 1.1rem;
+    }
+
+    .timeline-row, .location-card, .note-card, .contact-card {
+      border: 1px solid rgba(47,41,36,.1);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.18);
+    }
+
+    .timeline-row {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 16px;
+      padding: 16px 18px;
+      align-items: center;
+    }
+
+    .timeline-row time {
+      color: #fff;
+      font-weight: 600;
+      letter-spacing: .08em;
+    }
+
+    .location-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-top: 26px;
+    }
+
+    .location-card, .note-card {
+      padding: 22px;
+    }
+
+    .paper-section .invite-inner {
+      max-width: min(92%, 1180px);
+      background:
+        linear-gradient(rgba(255,255,255,.8), rgba(255,255,255,.8)),
+        radial-gradient(circle at 14% 22%, rgba(0,0,0,.05), transparent 26%),
+        var(--paper-bg);
+      color: var(--text);
+    }
+
+    .paper-section h3,
+    .paper-section p,
+    .paper-section .note-card h4 {
+      color: var(--text);
+    }
+
+    .paper-section .section-icon {
+      color: var(--accent2);
+      border-color: transparent;
+    }
+
+    .dress-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      align-items: center;
+      margin-top: 26px;
+    }
+
+    .dress-icons {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      margin: 18px 0;
+      color: var(--accent2);
+    }
+
+    .dress-icons .section-icon {
+      width: calc(var(--icon-size) * 1.4);
+      height: calc(var(--icon-size) * 1.4);
+      margin: 0;
+    }
+
+    .pinterest-box h4 {
+      font-family: var(--title-font, "Cormorant Garamond", serif);
+      font-size: 2.4rem;
+      font-weight: 300;
+    }
+
+    .pinterest-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid color-mix(in srgb, var(--text) 45%, transparent);
+      color: var(--text);
+      text-decoration: none;
+      margin-top: 12px;
+    }
+
+    .location-card h4, .note-card h4 {
+      margin: 10px 0 8px;
+      font-family: "Cormorant Garamond", serif;
+      font-size: 1.6rem;
+      font-weight: 400;
+      color: #fff;
+    }
+
+    .link-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+      min-height: 38px;
+      border-radius: var(--radius);
+      padding: 9px 16px;
+      background: var(--text);
+      color: var(--soft);
+      text-decoration: none;
+      font-size: .8rem;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 28px;
+    }
+
+    .gallery-grid img, .gallery-placeholder {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--accent2) 22%, white);
+    }
+
+    .gallery-placeholder {
+      display: grid;
+      place-items: center;
+      color: color-mix(in srgb, var(--text) 58%, white);
+      font-size: 1.5rem;
+    }
+
+    .rsvp-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .rsvp-actions .link-button {
+      margin-top: 0;
+    }
+
+    .contact-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .contact-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      text-align: left;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .contact-card small {
+      color: rgba(255,255,255,.74);
+    }
+
+    .contact-card .badge {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #25d366;
+      color: #fff;
+      flex: 0 0 auto;
+    }
+
+    .footer-invite {
+      padding: 32px 20px;
+      text-align: center;
+      background: var(--text);
+      color: rgba(255,255,255,.58);
+      font-size: .78rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 20;
+      max-width: 330px;
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      background: #fff;
+      box-shadow: var(--shadow);
+      color: var(--ink);
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 980px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: relative;
+        height: auto;
+      }
+
+      .preview-frame {
+        height: 720px;
+        min-height: 600px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .workspace {
+        padding: 18px 12px;
+      }
+
+      .field-grid, .list-row, .list-row.gallery {
+        grid-template-columns: 1fr;
+      }
+
+      .list-row .btn.icon {
+        width: 100%;
+      }
+
+      .top-strip {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .preview-frame {
+        border-width: 6px;
+        border-radius: 22px;
+        min-height: 620px;
+      }
+
+      .countdown {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .timeline-row {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline.centerline {
+        grid-template-columns: 1fr 64px 1fr;
+        gap: 0 8px;
+      }
+
+      .timeline.centerline .timeline-row {
+        min-height: 116px;
+      }
+
+      .timeline-copy strong {
+        font-size: 1.25rem;
+      }
+
+      .dress-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .pass-card {
+        padding: 28px 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Invita Studio</h1>
+        <p>Edita cada elemento de la invitación y exporta un proyecto estático listo para subir.</p>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn primary" id="exportZip" type="button" title="Descargar proyecto ZIP">
+          <i data-lucide="package-down"></i> Generar proyecto
+        </button>
+        <button class="btn ghost" id="saveLocal" type="button" title="Guardar en este navegador">
+          <i data-lucide="save"></i> Guardar
+        </button>
+        <button class="btn ghost" id="resetDemo" type="button" title="Restaurar demo">
+          <i data-lucide="rotate-ccw"></i> Demo
+        </button>
+      </div>
+
+      <form class="editor" id="editor">
+        <details open>
+          <summary><i data-lucide="sparkles"></i> Portada</summary>
+          <div class="field-grid">
+            <div class="field full">
+              <label for="eventType">Tipo de evento</label>
+              <select id="eventType" data-key="eventType">
+                <option value="boda">Boda</option>
+                <option value="xv">Quinceañera</option>
+                <option value="cumple">Cumpleaños</option>
+                <option value="bautizo">Bautizo</option>
+                <option value="personal">Personalizado</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label for="names">Nombres o título</label>
+              <textarea id="names" data-key="names"></textarea>
+            </div>
+            <div class="field">
+              <label for="monogram">Monograma</label>
+              <input id="monogram" data-key="monogram" />
+            </div>
+            <div class="field">
+              <label for="date">Fecha</label>
+              <input id="date" data-key="date" type="date" />
+            </div>
+            <div class="field full">
+              <label for="kicker">Texto superior</label>
+              <input id="kicker" data-key="kicker" />
+            </div>
+            <div class="field full">
+              <label for="phrase">Frase principal</label>
+              <textarea id="phrase" data-key="phrase"></textarea>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="palette"></i> Fondo y estilo</summary>
+          <div class="field-grid">
+            <div class="field">
+              <label for="bgColor">Fondo</label>
+              <input id="bgColor" data-key="bgColor" type="color" />
+            </div>
+            <div class="field">
+              <label for="textColor">Texto</label>
+              <input id="textColor" data-key="textColor" type="color" />
+            </div>
+            <div class="field">
+              <label for="accentColor">Acento</label>
+              <input id="accentColor" data-key="accentColor" type="color" />
+            </div>
+            <div class="field">
+              <label for="accent2Color">Secundario</label>
+              <input id="accent2Color" data-key="accent2Color" type="color" />
+            </div>
+            <div class="field">
+              <label for="panelColor">Panel translúcido</label>
+              <input id="panelColor" data-key="panelColor" type="color" />
+            </div>
+            <div class="field">
+              <label for="panelOpacity">Transparencia</label>
+              <input id="panelOpacity" data-key="panelOpacity" type="range" min="20" max="92" />
+            </div>
+            <div class="field full">
+              <label for="titleFont">Fuente de nombres</label>
+              <select id="titleFont" data-key="titleFont">
+                <option value="Cormorant Garamond">Cormorant Garamond</option>
+                <option value="Great Vibes">Great Vibes</option>
+                <option value="Playfair Display">Playfair Display</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label for="heroBgUrl">Imagen de fondo por URL</label>
+              <input id="heroBgUrl" data-key="heroBgUrl" placeholder="https://..." />
+            </div>
+            <div class="field full">
+              <label for="heroFile">Subir imagen de fondo</label>
+              <input id="heroFile" type="file" accept="image/*" />
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="door-open"></i> Entrada y efectos</summary>
+          <div class="field-grid">
+            <div class="field full">
+              <label for="entranceType">Entrada inicial</label>
+              <select id="entranceType" data-key="entranceType">
+                <option value="seal">Click con sello</option>
+                <option value="envelope">Sobre</option>
+                <option value="curtain">Cortinas</option>
+                <option value="none">Sin entrada</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="entranceText">Texto botón</label>
+              <input id="entranceText" data-key="entranceText" />
+            </div>
+            <div class="field">
+              <label for="entranceBg">Fondo entrada</label>
+              <input id="entranceBg" data-key="entranceBg" type="color" />
+            </div>
+            <div class="field full">
+              <label for="entranceLogoUrl">Logo/sello por URL</label>
+              <input id="entranceLogoUrl" data-key="entranceLogoUrl" placeholder="https://..." />
+            </div>
+            <div class="field full">
+              <label for="entranceLogoFile">Subir logo/sello</label>
+              <input id="entranceLogoFile" type="file" accept="image/*" />
+            </div>
+            <div class="field">
+              <label for="revealEffect">Efecto secciones</label>
+              <select id="revealEffect" data-key="revealEffect">
+                <option value="slide">Deslizar</option>
+                <option value="zoom">Zoom suave</option>
+                <option value="float">Flotar</option>
+                <option value="none">Sin efecto</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="itineraryLayout">Itinerario</label>
+              <select id="itineraryLayout" data-key="itineraryLayout">
+                <option value="centerline">Iconos al centro</option>
+                <option value="cards">Tarjetas</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="music"></i> Música</summary>
+          <div class="field full">
+            <label for="musicUrl">Música por URL</label>
+            <input id="musicUrl" data-key="musicUrl" placeholder="https://..." />
+          </div>
+          <div class="field full">
+            <label for="musicFile">Subir MP3</label>
+            <input id="musicFile" type="file" accept="audio/*" />
+          </div>
+          <label class="switch-row">
+            <span>Mostrar botón de música</span>
+            <span class="switch"><input type="checkbox" data-key="showMusic" /><span class="slider"></span></span>
+          </label>
+        </details>
+
+        <details>
+          <summary><i data-lucide="layout-list"></i> Secciones</summary>
+          <div id="sectionToggles"></div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="badge-plus"></i> Iconos de secciones</summary>
+          <div class="field-grid">
+            <div class="field">
+              <label for="iconColor">Color iconos</label>
+              <input id="iconColor" data-key="iconColor" type="color" />
+            </div>
+            <div class="field">
+              <label for="iconSize">Tamaño iconos</label>
+              <input id="iconSize" data-key="iconSize" type="range" min="28" max="96" />
+            </div>
+            <div class="field"><label for="countdownIcon">Cuenta regresiva</label><input id="countdownIcon" data-key="countdownIcon" data-icon-input /></div>
+            <div class="field"><label for="itineraryIcon">Itinerario</label><input id="itineraryIcon" data-key="itineraryIcon" data-icon-input /></div>
+            <div class="field"><label for="locationsIcon">Ubicación</label><input id="locationsIcon" data-key="locationsIcon" data-icon-input /></div>
+            <div class="field"><label for="galleryIcon">Galería</label><input id="galleryIcon" data-key="galleryIcon" data-icon-input /></div>
+            <div class="field"><label for="rsvpIcon">RSVP</label><input id="rsvpIcon" data-key="rsvpIcon" data-icon-input /></div>
+            <div class="field"><label for="wishesIcon">Deseos</label><input id="wishesIcon" data-key="wishesIcon" data-icon-input /></div>
+            <div class="field full">
+              <label>Galería de iconos</label>
+              <div class="icon-gallery" id="iconGallery"></div>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="badge-check"></i> Invitado</summary>
+          <div class="field-grid">
+            <div class="field full">
+              <label for="guestName">Nombre del invitado</label>
+              <input id="guestName" data-key="guestName" />
+            </div>
+            <div class="field">
+              <label for="passes">Pases</label>
+              <input id="passes" data-key="passes" type="number" min="1" />
+            </div>
+            <div class="field">
+              <label for="table">Mesa</label>
+              <input id="table" data-key="table" />
+            </div>
+            <div class="field full">
+              <label for="guestIntro">Texto invitado</label>
+              <textarea id="guestIntro" data-key="guestIntro"></textarea>
+            </div>
+            <div class="field">
+              <label for="childrenPolicy">Niños</label>
+              <select id="childrenPolicy" data-key="childrenPolicy">
+                <option value="no">No niños</option>
+                <option value="yes">Con niños</option>
+                <option value="adults">Solo adultos</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="childrenText">Texto niños</label>
+              <input id="childrenText" data-key="childrenText" />
+            </div>
+            <div class="field full">
+              <label for="qrText">Texto del QR</label>
+              <textarea id="qrText" data-key="qrText"></textarea>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="users"></i> Invitados por familia</summary>
+          <div class="field-grid">
+            <div class="field full">
+              <label for="guestsCsv">Lista CSV</label>
+              <textarea id="guestsCsv" data-key="guestsCsv" placeholder="id,nombre,pases,mesa,ninos&#10;franco-ortiz,Familia Franco Ortiz,2,5,no"></textarea>
+            </div>
+            <div class="field full">
+              <label for="previewGuestId">Familia para vista previa</label>
+              <select id="previewGuestId" data-key="previewGuestId"></select>
+            </div>
+            <div class="field full">
+              <label>Links generados</label>
+              <div class="guest-links" id="guestLinks"></div>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="clock-3"></i> Itinerario</summary>
+          <div class="list-editor" id="itineraryEditor"></div>
+          <div class="field">
+            <label>Iconos para el punto seleccionado</label>
+            <div class="icon-gallery" id="itineraryIconGallery"></div>
+          </div>
+          <button class="btn ghost" type="button" id="addItinerary"><i data-lucide="plus"></i> Agregar</button>
+        </details>
+
+        <details>
+          <summary><i data-lucide="map-pin"></i> Ubicaciones</summary>
+          <div class="list-editor" id="locationsEditor"></div>
+          <button class="btn ghost" type="button" id="addLocation"><i data-lucide="plus"></i> Agregar</button>
+        </details>
+
+        <details>
+          <summary><i data-lucide="images"></i> Galería</summary>
+          <div class="list-editor" id="galleryEditor"></div>
+          <button class="btn ghost" type="button" id="addGallery"><i data-lucide="plus"></i> Agregar foto</button>
+        </details>
+
+        <details>
+          <summary><i data-lucide="shirt"></i> Vestimenta y regalos</summary>
+          <div class="field-grid">
+            <div class="field">
+              <label for="dressTitle">Vestimenta</label>
+              <input id="dressTitle" data-key="dressTitle" />
+            </div>
+            <div class="field">
+              <label for="dressIcon">Icono</label>
+              <input id="dressIcon" data-key="dressIcon" />
+            </div>
+            <div class="field full">
+              <label for="dressText">Notas de vestimenta</label>
+              <textarea id="dressText" data-key="dressText"></textarea>
+            </div>
+            <div class="field">
+              <label for="dressIconMale">Icono hombre</label>
+              <input id="dressIconMale" data-key="dressIconMale" data-icon-input />
+            </div>
+            <div class="field">
+              <label for="dressIconFemale">Icono mujer</label>
+              <input id="dressIconFemale" data-key="dressIconFemale" data-icon-input />
+            </div>
+            <div class="field full">
+              <label for="pinterestUrl">Tablero Pinterest</label>
+              <input id="pinterestUrl" data-key="pinterestUrl" placeholder="https://pinterest.com/..." />
+            </div>
+            <div class="field">
+              <label for="giftTitle">Título regalos</label>
+              <input id="giftTitle" data-key="giftTitle" />
+            </div>
+            <div class="field">
+              <label for="giftIcon">Icono</label>
+              <input id="giftIcon" data-key="giftIcon" />
+            </div>
+            <div class="field full">
+              <label for="giftText">Texto regalos</label>
+              <textarea id="giftText" data-key="giftText"></textarea>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="message-circle-heart"></i> RSVP y contactos</summary>
+          <div class="field-grid">
+            <div class="field full">
+              <label for="rsvpText">Texto RSVP</label>
+              <textarea id="rsvpText" data-key="rsvpText"></textarea>
+            </div>
+            <div class="field full">
+              <label for="rsvpUrl">Link RSVP o WhatsApp</label>
+              <input id="rsvpUrl" data-key="rsvpUrl" />
+            </div>
+            <div class="field">
+              <label for="contact1Name">Contacto 1</label>
+              <input id="contact1Name" data-key="contact1Name" />
+            </div>
+            <div class="field">
+              <label for="contact1Phone">WhatsApp 1</label>
+              <input id="contact1Phone" data-key="contact1Phone" />
+            </div>
+            <div class="field">
+              <label for="contact2Name">Contacto 2</label>
+              <input id="contact2Name" data-key="contact2Name" />
+            </div>
+            <div class="field">
+              <label for="contact2Phone">WhatsApp 2</label>
+              <input id="contact2Phone" data-key="contact2Phone" />
+            </div>
+          </div>
+        </details>
+      </form>
+    </aside>
+
+    <section class="workspace">
+      <div class="top-strip">
+        <div>
+          <h2>Vista previa editable</h2>
+          <p>Lo que ves aquí será lo que se exporta como invitación.</p>
+        </div>
+        <div class="device-actions" aria-label="Tamaño de vista previa">
+          <button class="btn icon" type="button" id="mobileView" title="Vista móvil"><i data-lucide="smartphone"></i></button>
+          <button class="btn icon" type="button" id="desktopView" title="Vista escritorio"><i data-lucide="monitor"></i></button>
+        </div>
+      </div>
+      <div class="preview-wrap">
+        <div class="preview-frame" id="previewFrame">
+          <div id="preview"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "invita-studio-project-v1";
+
+    const sectionMeta = [
+      ["guest", "Pase personalizado"],
+      ["countdown", "Cuenta regresiva"],
+      ["itinerary", "Itinerario"],
+      ["locations", "Ubicaciones"],
+      ["dress", "Código de vestimenta"],
+      ["gifts", "Mesa de regalos"],
+      ["gallery", "Galería"],
+      ["rsvp", "Confirmación RSVP"],
+      ["wishes", "Buenos deseos"],
+      ["contacts", "Contactos"]
+    ];
+
+    const iconOptions = [
+      ["church", "Iglesia"],
+      ["glasses", "Copas"],
+      ["cloche", "Cena"],
+      ["disc", "Fiesta"],
+      ["hourglass", "Reloj"],
+      ["sparkles", "Brillos"],
+      ["map-pin", "Mapa"],
+      ["images", "Fotos"],
+      ["badge-check", "Check"],
+      ["heart", "Corazón"],
+      ["suit", "Traje"],
+      ["dress", "Vestido"],
+      ["gift", "Regalo"],
+      ["envelope", "Sobre"],
+      ["camera", "Cámara"],
+      ["child", "Niños"]
+    ];
+
+    const demo = {
+      eventType: "boda",
+      names: "Carina\n&\nFernando",
+      monogram: "C&F",
+      date: "2026-11-25",
+      kicker: "Tenemos el honor de invitarte",
+      phrase: "Hay momentos en la vida que son especiales por sí solos, pero compartirlos con las personas que amamos los convierte en inolvidables.",
+      bgColor: "#f7f2ea",
+      textColor: "#2f2924",
+      accentColor: "#b98e54",
+      accent2Color: "#78866b",
+      panelColor: "#6f7b66",
+      panelOpacity: "72",
+      iconColor: "#ffffff",
+      iconSize: "58",
+      titleFont: "Cormorant Garamond",
+      heroBgUrl: "",
+      heroImageData: "",
+      entranceType: "seal",
+      entranceText: "Click Aquí",
+      entranceBg: "#f4dddd",
+      entranceLogoUrl: "",
+      entranceLogoData: "",
+      revealEffect: "slide",
+      itineraryLayout: "centerline",
+      musicUrl: "",
+      musicData: "",
+      showMusic: true,
+      countdownIcon: "hourglass",
+      itineraryIcon: "sparkles",
+      locationsIcon: "map-pin",
+      galleryIcon: "images",
+      rsvpIcon: "badge-check",
+      wishesIcon: "heart",
+      guestName: "Familia López García",
+      passes: "4",
+      table: "12",
+      guestIntro: "El comienzo de nuestra historia más hermosa no sería lo mismo sin ustedes.",
+      childrenPolicy: "no",
+      childrenText: "NO NIÑOS",
+      qrText: "",
+      guestsCsv: "id,nombre,pases,mesa,ninos\nfranco-ortiz,Familia Franco Ortiz,2,5,no\nlopez-garcia,Familia López García,4,12,si\nmendez-ruiz,Familia Méndez Ruiz,3,8,adultos",
+      previewGuestId: "franco-ortiz",
+      dressTitle: "Formal elegante",
+      dressIcon: "✦",
+      dressIconMale: "suit",
+      dressIconFemale: "dress",
+      dressText: "Agradecemos reservar el color blanco para la novia. Se sugiere traje oscuro y vestido largo.",
+      pinterestUrl: "",
+      giftTitle: "Mesa de regalos",
+      giftIcon: "◇",
+      giftText: "El mejor regalo es tu presencia. Si deseas tener un detalle con nosotros, puedes hacerlo mediante transferencia o sobre el día del evento.",
+      rsvpText: "Tu confirmación nos ayuda a preparar cada detalle con mucho cariño.",
+      rsvpUrl: "https://wa.me/50200000000?text=Confirmo%20mi%20asistencia",
+      contact1Name: "Carina",
+      contact1Phone: "50200000001",
+      contact2Name: "Fernando",
+      contact2Phone: "50200000002",
+      sections: {
+        guest: true,
+        countdown: true,
+        itinerary: true,
+        locations: true,
+        dress: true,
+        gifts: true,
+        gallery: true,
+        rsvp: true,
+        wishes: true,
+        contacts: true
+      },
+      itinerary: [
+        { time: "3:30 PM", title: "Ceremonia · Jardín Quetzal", icon: "church" },
+        { time: "6:00 PM", title: "Recepción · Jardín Palomos", icon: "glasses" },
+        { time: "7:00 PM", title: "Cena", icon: "cloche" },
+        { time: "8:00 PM", title: "Fiesta", icon: "disc" }
+      ],
+      locations: [
+        { icon: "⌂", title: "Parroquia San José", url: "https://maps.google.com" },
+        { icon: "✧", title: "Jardín Los Encinos", url: "https://maps.google.com" }
+      ],
+      gallery: ["", "", "", "", "", ""]
+    };
+
+    let state = structuredClone(demo);
+
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+    function escapeHtml(value = "") {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function plainText(value = "") {
+      return escapeHtml(value).replace(/\n/g, "<br />");
+    }
+
+    function formatDate(date) {
+      if (!date) return "";
+      return new Date(`${date}T12:00:00`).toLocaleDateString("es-GT", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+      }).toUpperCase();
+    }
+
+    function hexToRgb(hex = "#6f7b66") {
+      const clean = String(hex).replace("#", "");
+      const value = clean.length === 3
+        ? clean.split("").map((char) => char + char).join("")
+        : clean.padEnd(6, "0").slice(0, 6);
+      const num = Number.parseInt(value, 16);
+      return `${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}`;
+    }
+
+    function inviteIcon(name = "sparkles") {
+      const icons = {
+        church: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M31 8v9M26 12h10M18 30v25h28V30L32 20 18 30Z"/><path d="M10 39h8v16h-8V39ZM46 39h8v16h-8V39ZM28 55V42a4 4 0 0 1 8 0v13"/></svg>',
+        glasses: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M22 17v14c0 8-10 8-10 0V17h10ZM42 17v14c0 8 10 8 10 0V17H42ZM17 39v14M47 39v14M12 53h10M42 53h10"/><path d="M22 27h20"/></svg>',
+        cloche: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 42a18 18 0 0 1 36 0H14ZM10 46h44M32 18v-5M28 13h8M40 46l8 10M24 46l-8 10"/></svg>',
+        disc: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="20"/><circle cx="32" cy="32" r="6"/><path d="M48 20c4 4 6 8 6 14M16 44c-4-4-6-8-6-14M20 12l3 6 6 3-6 3-3 6-3-6-6-3 6-3 3-6ZM48 42l2 4 4 2-4 2-2 4-2-4-4-2 4-2 2-4Z"/></svg>',
+        hourglass: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 10h28M18 54h28M22 10c0 13 20 13 20 22S22 41 22 54M42 10c0 13-20 13-20 22s20 9 20 22"/></svg>',
+        sparkles: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6l5 16 16 5-16 5-5 16-5-16-16-5 16-5 5-16ZM49 39l2 7 7 2-7 2-2 7-2-7-7-2 7-2 2-7Z"/></svg>',
+        "map-pin": '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 58s18-17 18-34a18 18 0 0 0-36 0c0 17 18 34 18 34Z"/><circle cx="32" cy="24" r="6"/></svg>',
+        images: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 18h32v30H14z"/><path d="M22 14h28v30M20 42l9-10 7 7 5-6 5 7"/><circle cx="38" cy="26" r="3"/></svg>',
+        "badge-check": '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6l7 6 9-1 4 8 8 4-1 9 1 9-8 4-4 8-9-1-7 6-7-6-9 1-4-8-8-4 1-9-1-9 8-4 4-8 9 1 7-6Z"/><path d="M22 33l7 7 14-17"/></svg>',
+        heart: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 54S10 40 10 24a11 11 0 0 1 20-6 11 11 0 0 1 20 6c0 16-18 27-18 30Z"/></svg>',
+        suit: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M22 12h20l8 12-9 4 7 24H16l7-24-9-4 8-12Z"/><path d="M26 12l6 12 6-12M32 24v28M27 23h10M28 32h8M28 41h8"/></svg>',
+        dress: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M25 12h14l-3 14 9 26H19l9-26-3-14Z"/><path d="M25 12c2 8 12 8 14 0M28 26h8"/></svg>',
+        gift: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 26h40v28H12zM10 18h44v8H10zM32 18v36"/><path d="M32 18c-8 0-13-2-13-7 0-3 3-5 6-4 4 1 7 5 7 11ZM32 18c8 0 13-2 13-7 0-3-3-5-6-4-4 1-7 5-7 11Z"/></svg>',
+        envelope: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M10 18h44v30H10z"/><path d="M10 20l22 18 22-18M10 48l16-15M54 48L38 33"/></svg>',
+        camera: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 22h10l4-6h12l4 6h10v28H12z"/><circle cx="32" cy="36" r="10"/><path d="M46 28h2"/></svg>',
+        child: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="14" r="7"/><path d="M32 23v18M20 30h24M24 56l8-15 8 15"/></svg>'
+      };
+      if (icons[name]) return icons[name];
+      return `<span>${escapeHtml(name || "✦")}</span>`;
+    }
+
+    function slugify(value) {
+      return String(value || "invitacion")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase() || "invitacion";
+    }
+
+    function parseTimeValue(value = "") {
+      const raw = String(value).trim().toLowerCase();
+      const match = raw.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
+      if (!match) return Number.POSITIVE_INFINITY;
+      let hour = Number(match[1]);
+      const minute = Number(match[2] || 0);
+      const meridiem = match[3];
+      if (meridiem === "pm" && hour < 12) hour += 12;
+      if (meridiem === "am" && hour === 12) hour = 0;
+      if (!meridiem && hour >= 1 && hour <= 11) hour += 12;
+      return hour * 60 + minute;
+    }
+
+    function sortedItinerary(items = []) {
+      return [...items]
+        .map((item, index) => ({ ...item, _index: index, _sort: parseTimeValue(item.time) }))
+        .sort((a, b) => (a._sort - b._sort) || (a._index - b._index));
+    }
+
+    function inferItineraryIcon(title = "") {
+      const text = String(title).toLowerCase();
+      if (text.includes("ceremon")) return "church";
+      if (text.includes("recep") || text.includes("brind")) return "glasses";
+      if (text.includes("cena") || text.includes("banquete")) return "cloche";
+      if (text.includes("baile") || text.includes("fiesta")) return "disc";
+      return "sparkles";
+    }
+
+    function migrateItineraryIcons() {
+      const items = state.itinerary || [];
+      const needsMigration = items.length && items.every((item) => !item.icon || item.icon === "sparkles");
+      if (!needsMigration) return;
+      state.itinerary = items.map((item) => ({ ...item, icon: inferItineraryIcon(item.title) }));
+    }
+
+    function normalizeItineraryOrder() {
+      state.itinerary = sortedItinerary(state.itinerary).map(({ _index, _sort, ...item }) => item);
+    }
+
+    function splitCsvLine(line = "") {
+      const cells = [];
+      let current = "";
+      let quoted = false;
+      const delimiter = line.includes(";") ? ";" : line.includes("\t") ? "\t" : ",";
+      for (let i = 0; i < line.length; i += 1) {
+        const char = line[i];
+        if (char === '"') {
+          quoted = !quoted;
+        } else if (char === delimiter && !quoted) {
+          cells.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      cells.push(current.trim());
+      return cells.map((cell) => cell.replace(/^"|"$/g, ""));
+    }
+
+    function parseGuestsCsv(csv = "") {
+      const lines = String(csv).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      if (!lines.length) return [];
+      const headers = splitCsvLine(lines[0]).map((h) => h.toLowerCase());
+      return lines.slice(1).map((line, index) => {
+        const values = splitCsvLine(line);
+        const row = {};
+        headers.forEach((header, i) => row[header] = values[i] || "");
+        const name = row.nombre || row.name || row.familia || `Invitado ${index + 1}`;
+        return {
+          id: row.id || slugify(name),
+          nombre: name,
+          pases: row.pases || row.passes || "1",
+          mesa: row.mesa || row.table || "",
+          ninos: row.ninos || row.niños || row.children || "no",
+          estado: row.estado || "pendiente"
+        };
+      });
+    }
+
+    function activeGuest(project = state) {
+      const guests = parseGuestsCsv(project.guestsCsv);
+      return guests.find((guest) => guest.id === project.previewGuestId) || guests[0] || null;
+    }
+
+    function guestChildrenPolicy(guest, project) {
+      if (!guest) return project.childrenPolicy;
+      const value = String(guest.ninos || "").toLowerCase();
+      if (["si", "sí", "yes", "con", "true"].includes(value)) return "yes";
+      if (["adultos", "solo adultos", "adults"].includes(value)) return "adults";
+      if (["no", "false", "sin"].includes(value)) return "no";
+      return project.childrenPolicy;
+    }
+
+    function refreshGuestTools() {
+      const guests = parseGuestsCsv(state.guestsCsv);
+      const select = $("#previewGuestId");
+      if (select) {
+        const current = state.previewGuestId;
+        select.innerHTML = guests.map((guest) => `<option value="${escapeHtml(guest.id)}">${escapeHtml(guest.nombre)} · ${escapeHtml(guest.pases)} pases</option>`).join("");
+        if (guests.some((guest) => guest.id === current)) select.value = current;
+        else if (guests[0]) {
+          state.previewGuestId = guests[0].id;
+          select.value = guests[0].id;
+        }
+      }
+      const links = $("#guestLinks");
+      if (links) {
+        links.innerHTML = guests.length ? guests.map((guest) => {
+          const url = `index.html?guest=${encodeURIComponent(guest.id)}`;
+          return `<div class="guest-link-row"><span><strong>${escapeHtml(guest.nombre)}</strong><br><code>${url}</code></span><button class="btn ghost" type="button" data-copy-link="${escapeHtml(url)}">Copiar</button></div>`;
+        }).join("") : `<div class="guest-link-row"><span>Pega un CSV para generar enlaces.</span></div>`;
+        $$("[data-copy-link]", links).forEach((button) => {
+          button.addEventListener("click", () => {
+            navigator.clipboard?.writeText(button.dataset.copyLink);
+            toast("Link copiado.");
+          });
+        });
+      }
+    }
+
+    function toast(message) {
+      const el = $("#toast");
+      el.textContent = message;
+      el.classList.add("show");
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+    function icon(name, size = 18) {
+      return `<i data-lucide="${name}" style="width:${size}px;height:${size}px"></i>`;
+    }
+
+    function init() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          state = { ...structuredClone(demo), ...JSON.parse(saved) };
+          state.sections = { ...demo.sections, ...(state.sections || {}) };
+          migrateItineraryIcons();
+        } catch {
+          state = structuredClone(demo);
+        }
+      }
+
+      renderSectionToggles();
+      bindStaticEvents();
+      syncForm();
+      renderListEditors();
+      refreshGuestTools();
+      renderPreview();
+      lucide.createIcons();
+    }
+
+    function bindStaticEvents() {
+      renderIconGallery("countdownIcon");
+      renderScopedIconGallery("itineraryIconGallery", "itinerary.0.icon");
+
+      $("#editor").addEventListener("input", (event) => {
+        const key = event.target.dataset.key;
+        if (!key) return;
+        if (event.target.type === "checkbox") {
+          state[key] = event.target.checked;
+        } else {
+          state[key] = event.target.value;
+        }
+        if (key === "guestsCsv") {
+          refreshGuestTools();
+        }
+        persistSilent();
+        renderPreview();
+      });
+
+      $("#editor").addEventListener("change", (event) => {
+        const key = event.target.dataset.key;
+        if (event.target.type === "checkbox" && key) {
+          state[key] = event.target.checked;
+          persistSilent();
+          renderPreview();
+        }
+      });
+
+      $$("[data-icon-input]").forEach((input) => {
+        input.addEventListener("focus", () => renderIconGallery(input.dataset.key || input.id));
+        input.addEventListener("click", () => renderIconGallery(input.dataset.key || input.id));
+      });
+
+      $("#saveLocal").addEventListener("click", () => {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        toast("Proyecto guardado en este navegador.");
+      });
+
+      $("#resetDemo").addEventListener("click", () => {
+        state = structuredClone(demo);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        syncForm();
+        renderListEditors();
+        renderPreview();
+        toast("Demo restaurada.");
+      });
+
+      $("#exportZip").addEventListener("click", exportZip);
+      $("#mobileView").addEventListener("click", () => $("#previewFrame").classList.remove("desktop"));
+      $("#desktopView").addEventListener("click", () => $("#previewFrame").classList.add("desktop"));
+      $("#addItinerary").addEventListener("click", () => {
+        state.itinerary.push({ time: "20:00", title: "Nuevo momento", icon: "sparkles" });
+        renderListEditors();
+        renderPreview();
+      });
+      $("#addLocation").addEventListener("click", () => {
+        state.locations.push({ icon: "⌖", title: "Nueva ubicación", url: "" });
+        renderListEditors();
+        renderPreview();
+      });
+      $("#addGallery").addEventListener("click", () => {
+        state.gallery.push("");
+        renderListEditors();
+        renderPreview();
+      });
+
+      $("#heroFile").addEventListener("change", (event) => readFile(event.target.files[0], (data) => {
+        state.heroImageData = data;
+        state.heroBgUrl = "";
+        syncForm();
+        renderPreview();
+        toast("Fondo cargado.");
+      }));
+
+      $("#musicFile").addEventListener("change", (event) => readFile(event.target.files[0], (data) => {
+        state.musicData = data;
+        state.musicUrl = "";
+        syncForm();
+        renderPreview();
+        toast("Música cargada.");
+      }));
+
+      $("#entranceLogoFile").addEventListener("change", (event) => readFile(event.target.files[0], (data) => {
+        state.entranceLogoData = data;
+        state.entranceLogoUrl = "";
+        syncForm();
+        renderPreview();
+        toast("Sello de entrada cargado.");
+      }));
+    }
+
+    function getIconValue(targetKey = "countdownIcon") {
+      if (targetKey.includes(".")) {
+        const [list, index, field] = targetKey.split(".");
+        return state[list]?.[Number(index)]?.[field] || "";
+      }
+      return state[targetKey] || "";
+    }
+
+    function setIconValue(targetKey, value) {
+      if (targetKey.includes(".")) {
+        const [list, index, field] = targetKey.split(".");
+        if (state[list]?.[Number(index)]) state[list][Number(index)][field] = value;
+      } else {
+        state[targetKey] = value;
+      }
+    }
+
+    function renderIconGallery(targetKey = "countdownIcon") {
+      const gallery = $("#iconGallery");
+      if (!gallery) return;
+      gallery.dataset.target = targetKey;
+      gallery.innerHTML = iconOptions.map(([value, label]) => `
+        <button class="icon-choice ${getIconValue(targetKey) === value ? "active" : ""}" type="button" data-icon-choice="${value}" title="${label}">
+          ${inviteIcon(value)}
+          <small>${label}</small>
+        </button>
+      `).join("");
+      $$("[data-icon-choice]", gallery).forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = gallery.dataset.target || "countdownIcon";
+          setIconValue(target, button.dataset.iconChoice);
+          const input = target.includes(".")
+            ? $(`[data-icon-target="${target}"]`)
+            : $(`[data-key="${target}"]`);
+          if (input) input.value = state[target];
+          if (input && target.includes(".")) input.value = button.dataset.iconChoice;
+          persistSilent();
+          renderListEditors();
+          renderIconGallery(target);
+          renderPreview();
+        });
+      });
+    }
+
+    function renderScopedIconGallery(containerId, targetKey = "itinerary.0.icon") {
+      const gallery = $(`#${containerId}`);
+      if (!gallery) return;
+      gallery.dataset.target = targetKey;
+      gallery.innerHTML = iconOptions.map(([value, label]) => `
+        <button class="icon-choice ${getIconValue(targetKey) === value ? "active" : ""}" type="button" data-scoped-icon="${value}" title="${label}">
+          ${inviteIcon(value)}
+          <small>${label}</small>
+        </button>
+      `).join("");
+      $$("[data-scoped-icon]", gallery).forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = gallery.dataset.target || "itinerary.0.icon";
+          setIconValue(target, button.dataset.scopedIcon);
+          const input = $(`[data-icon-target="${target}"]`);
+          if (input) input.value = button.dataset.scopedIcon;
+          persistSilent();
+          renderListEditors();
+          renderScopedIconGallery(containerId, target);
+          renderPreview();
+        });
+      });
+    }
+
+    function readFile(file, callback) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => callback(reader.result);
+      reader.readAsDataURL(file);
+    }
+
+    function persistSilent() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function renderSectionToggles() {
+      $("#sectionToggles").innerHTML = sectionMeta.map(([key, label]) => `
+        <label class="switch-row">
+          <span>${label}</span>
+          <span class="switch">
+            <input type="checkbox" data-section="${key}" />
+            <span class="slider"></span>
+          </span>
+        </label>
+      `).join("");
+
+      $$("[data-section]").forEach((input) => {
+        input.addEventListener("change", () => {
+          state.sections[input.dataset.section] = input.checked;
+          persistSilent();
+          renderPreview();
+        });
+      });
+    }
+
+    function syncForm() {
+      $$("[data-key]").forEach((input) => {
+        const key = input.dataset.key;
+        if (input.type === "checkbox") input.checked = Boolean(state[key]);
+        else input.value = state[key] ?? "";
+      });
+      $$("[data-section]").forEach((input) => {
+        input.checked = Boolean(state.sections[input.dataset.section]);
+      });
+    }
+
+    function renderListEditors() {
+      normalizeItineraryOrder();
+      $("#itineraryEditor").innerHTML = state.itinerary.map((item, index) => `
+        <div class="list-row itinerary-row">
+          <input value="${escapeHtml(item.time)}" aria-label="Hora" placeholder="Hora" data-list="itinerary" data-index="${index}" data-field="time" />
+          <input value="${escapeHtml(item.title)}" aria-label="Momento" placeholder="Evento" data-list="itinerary" data-index="${index}" data-field="title" />
+          <input value="${escapeHtml(item.icon || "sparkles")}" aria-label="Icono" placeholder="Icono" data-list="itinerary" data-index="${index}" data-field="icon" data-icon-target="itinerary.${index}.icon" />
+          <button class="icon-preview-btn" type="button" title="Elegir icono" data-icon-button="itinerary.${index}.icon">${inviteIcon(item.icon || "sparkles")}</button>
+          <button class="btn icon" type="button" title="Eliminar" data-remove="itinerary" data-index="${index}">${icon("trash-2")}</button>
+        </div>
+      `).join("");
+
+      $("#locationsEditor").innerHTML = state.locations.map((item, index) => `
+        <div class="list-row">
+          <input value="${escapeHtml(item.title)}" aria-label="Lugar" data-list="locations" data-index="${index}" data-field="title" />
+          <input value="${escapeHtml(item.url)}" aria-label="URL" data-list="locations" data-index="${index}" data-field="url" />
+          <button class="btn icon" type="button" title="Eliminar" data-remove="locations" data-index="${index}">${icon("trash-2")}</button>
+          <input value="${escapeHtml(item.icon)}" aria-label="Icono" data-list="locations" data-index="${index}" data-field="icon" data-icon-target="locations.${index}.icon" />
+        </div>
+      `).join("");
+
+      $("#galleryEditor").innerHTML = state.gallery.map((item, index) => `
+        <div class="list-row gallery">
+          <input value="${escapeHtml(item)}" placeholder="URL de foto o deja vacío" aria-label="Foto" data-list="gallery" data-index="${index}" />
+          <button class="btn icon" type="button" title="Eliminar" data-remove="gallery" data-index="${index}">${icon("trash-2")}</button>
+          <input type="file" accept="image/*" aria-label="Subir foto" data-gallery-file="${index}" />
+        </div>
+      `).join("");
+
+      $$("[data-list]").forEach((input) => {
+        input.addEventListener("input", () => {
+          const list = input.dataset.list;
+          const index = Number(input.dataset.index);
+          if (list === "gallery") state.gallery[index] = input.value;
+          else state[list][index][input.dataset.field] = input.value;
+          persistSilent();
+          renderPreview();
+        });
+        input.addEventListener("change", () => {
+          if (input.dataset.list === "itinerary" && input.dataset.field === "time") {
+            renderListEditors();
+            renderPreview();
+          }
+        });
+      });
+
+      $$("[data-icon-target]").forEach((input) => {
+        input.addEventListener("focus", () => {
+          renderIconGallery(input.dataset.iconTarget);
+          if (input.dataset.iconTarget.startsWith("itinerary.")) {
+            renderScopedIconGallery("itineraryIconGallery", input.dataset.iconTarget);
+          }
+        });
+        input.addEventListener("click", () => {
+          renderIconGallery(input.dataset.iconTarget);
+          if (input.dataset.iconTarget.startsWith("itinerary.")) {
+            renderScopedIconGallery("itineraryIconGallery", input.dataset.iconTarget);
+          }
+        });
+      });
+
+      $$("[data-icon-button]").forEach((button) => {
+        button.addEventListener("click", () => {
+          renderIconGallery(button.dataset.iconButton);
+          if (button.dataset.iconButton.startsWith("itinerary.")) {
+            renderScopedIconGallery("itineraryIconGallery", button.dataset.iconButton);
+          }
+          const input = $(`[data-icon-target="${button.dataset.iconButton}"]`);
+          input?.focus();
+        });
+      });
+
+      $$("[data-remove]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state[button.dataset.remove].splice(Number(button.dataset.index), 1);
+          renderListEditors();
+          renderPreview();
+        });
+      });
+
+      $$("[data-gallery-file]").forEach((input) => {
+        input.addEventListener("change", () => readFile(input.files[0], (data) => {
+          state.gallery[Number(input.dataset.galleryFile)] = data;
+          renderListEditors();
+          renderPreview();
+        }));
+      });
+
+      lucide.createIcons();
+    }
+
+    function invitationHTML(project, forExport = false) {
+      const heroImage = project.heroImageData || project.heroBgUrl;
+      const heroStyle = heroImage ? `--hero-bg:url('${escapeHtml(heroImage)}')` : "";
+      const music = project.musicData || project.musicUrl;
+      const sections = project.sections || {};
+      const titleFont = project.titleFont || "Cormorant Garamond";
+      const panelRgb = hexToRgb(project.panelColor);
+      const panelAlpha = Math.max(.2, Math.min(.92, Number(project.panelOpacity || 72) / 100));
+      const pageBg = heroImage ? `url('${escapeHtml(heroImage)}')` : escapeHtml(project.bgColor);
+      const gateLogo = project.entranceLogoData || project.entranceLogoUrl;
+      const guestData = activeGuest(project);
+      const displayGuestName = guestData?.nombre || project.guestName;
+      const displayPasses = guestData?.pases || project.passes;
+      const displayTable = guestData?.mesa || project.table;
+      const displayChildrenPolicy = guestChildrenPolicy(guestData, project);
+      const childrenLabel = displayChildrenPolicy === "custom"
+        ? project.childrenText
+        : displayChildrenPolicy === "yes"
+          ? "CON NIÑOS"
+          : displayChildrenPolicy === "adults"
+            ? "SOLO ADULTOS"
+            : "NO NIÑOS";
+      const qrText = project.qrText || [
+        "Bienvenido",
+        displayGuestName,
+        `${displayPasses} Pases`,
+        `Mesa: ${displayTable}`,
+        project.names.replace(/\n/g, " ")
+      ].filter(Boolean).join("\n");
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrText)}`;
+      const gate = project.entranceType !== "none" ? `
+        <div class="invite-gate" data-gate="${escapeHtml(project.entranceType || "seal")}" style="--gate-bg:${escapeHtml(project.entranceBg || project.bgColor)}">
+          <div class="gate-center">
+            <button class="gate-button" type="button" data-open-invite>${escapeHtml(project.entranceText || "Click Aquí")}</button>
+            <div class="gate-mark">${gateLogo ? `<img src="${escapeHtml(gateLogo)}" alt="Sello de entrada" />` : `<span>${escapeHtml(project.monogram)}</span>`}</div>
+          </div>
+        </div>` : "";
+
+      const guest = sections.guest ? `
+        <section class="guest-card reveal">
+          <div class="pass-card">
+            <p class="pass-kicker">¡Es un placer invitarlos!</p>
+            <strong data-guest-name>${escapeHtml(displayGuestName)}</strong>
+            <p>${plainText(project.guestIntro)}</p>
+            <div class="children-policy" data-guest-children>${escapeHtml(childrenLabel)} ${displayChildrenPolicy === "no" ? inviteIcon("child") : ""}</div>
+            <div class="pass-number" data-guest-passes>${escapeHtml(displayPasses)}</div>
+            <div class="pass-label">Pases</div>
+            <div class="qr-box"><img data-guest-qr src="${qrUrl}" alt="Código QR del invitado" /></div>
+            <div class="pass-footer">
+              No. Mesa <span data-guest-table>${escapeHtml(displayTable || "")}</span><br />
+              Gracias por confirmar tu asistencia
+            </div>
+          </div>
+        </section>` : "";
+
+      const countdown = sections.countdown ? `
+        <section class="invite-section reveal">
+          <div class="invite-inner">
+            <div class="section-icon">${inviteIcon(project.countdownIcon)}</div>
+            <h3>Faltan</h3>
+            <div class="countdown" data-countdown="${escapeHtml(project.date)}">
+              <div class="count-item"><strong data-d>00</strong><span>Días</span></div>
+              <div class="count-item"><strong data-h>00</strong><span>Horas</span></div>
+              <div class="count-item"><strong data-m>00</strong><span>Min</span></div>
+              <div class="count-item"><strong data-s>00</strong><span>Seg</span></div>
+            </div>
+          </div>
+        </section>` : "";
+
+      const itineraryItems = sortedItinerary(project.itinerary);
+      const itinerary = sections.itinerary ? `
+        <section class="invite-section reveal">
+          <div class="invite-inner">
+            <div class="section-icon">${inviteIcon(project.itineraryIcon)}</div>
+            <h3>Itinerario</h3>
+            <div class="timeline ${project.itineraryLayout === "centerline" ? "centerline" : ""}">
+              ${itineraryItems.map((item, index) => project.itineraryLayout === "centerline"
+                ? `<div class="timeline-row" data-side="${index % 2 === 0 ? "left" : "right"}"><div class="timeline-copy"><strong>${escapeHtml(item.title)}</strong><time>${escapeHtml(item.time)}</time></div><div class="timeline-center-icon">${inviteIcon(item.icon || "sparkles")}</div></div>`
+                : `<div class="timeline-row"><time>${escapeHtml(item.time)}</time><span>${escapeHtml(item.title)}</span></div>`
+              ).join("")}
+            </div>
+          </div>
+        </section>` : "";
+
+      const locations = sections.locations ? `
+        <section class="invite-section reveal">
+          <div class="invite-inner">
+            <div class="section-icon">${inviteIcon(project.locationsIcon)}</div>
+            <h3>Ubicaciones</h3>
+            <div class="location-grid">
+              ${project.locations.map((item) => `
+                <article class="location-card">
+                  <div class="section-icon">${inviteIcon(item.icon || "map-pin")}</div>
+                  <h4>${escapeHtml(item.title)}</h4>
+                  ${item.url ? `<a class="link-button" href="${escapeHtml(item.url)}" target="_blank" rel="noreferrer">Cómo llegar</a>` : ""}
+                </article>
+              `).join("")}
+            </div>
+          </div>
+        </section>` : "";
+
+      const dress = sections.dress ? `
+        <section class="invite-section paper-section reveal">
+          <div class="invite-inner">
+            <h3>Código de vestimenta</h3>
+            <div class="dress-layout">
+              <article>
+                <h4>${escapeHtml(project.dressTitle)}</h4>
+                <div class="dress-icons">
+                  <div class="section-icon">${inviteIcon(project.dressIconMale || "suit")}</div>
+                  <div class="section-icon">${inviteIcon(project.dressIconFemale || "dress")}</div>
+                </div>
+                <p>${plainText(project.dressText)}</p>
+              </article>
+              <article class="pinterest-box">
+                <h4>Inspiración</h4>
+                <a class="pinterest-link" href="${escapeHtml(project.pinterestUrl || "#")}" target="_blank" rel="noreferrer">Ir a Pinterest</a>
+              </article>
+            </div>
+          </div>
+        </section>` : "";
+
+      const gifts = sections.gifts ? `
+        <section class="invite-section reveal">
+          <div class="invite-inner">
+            <div class="section-icon">${inviteIcon(project.giftIcon)}</div>
+            <h3>${escapeHtml(project.giftTitle)}</h3>
+            <article class="note-card"><p>${plainText(project.giftText)}</p></article>
+          </div>
+        </section>` : "";
+
+      const gallery = sections.gallery ? `
+        <section class="invite-section reveal">
+          <div class="invite-inner">
+            <div class="section-icon">${inviteIcon(project.galleryIcon)}</div>
+            <h3>Galería</h3>
+            <div class="gallery-grid">
+              ${project.gallery.map((src) => src ? `<img src="${escapeHtml(src)}" alt="Foto de la invitación" />` : `<div class="gallery-placeholder">✦</div>`).join("")}
+            </div>
+          </div>
+        </section>` : "";
+
+      const rsvp = sections.rsvp ? `
+        <section class="invite-section reveal">
+          <div class="invite-inner">
+            <div class="section-icon">${inviteIcon(project.rsvpIcon)}</div>
+            <h3>Confirma tu asistencia</h3>
+            <p>${plainText(project.rsvpText)}</p>
+            <div class="rsvp-actions">
+              <a class="link-button" href="${escapeHtml(project.rsvpUrl || "#")}" target="_blank" rel="noreferrer">Confirmar asistencia</a>
+              <button class="link-button" type="button" data-demo-alert>Enviar buenos deseos</button>
+            </div>
+          </div>
+        </section>` : "";
+
+      const wishes = sections.wishes ? `
+        <section class="invite-section reveal">
+          <div class="invite-inner">
+            <div class="section-icon">${inviteIcon(project.wishesIcon)}</div>
+            <h3>Buenos deseos</h3>
+            <article class="note-card">
+              <p><em>"Que esta nueva etapa esté llena de amor, alegría y bendiciones."</em></p>
+              <h4>Con cariño, sus invitados</h4>
+            </article>
+          </div>
+        </section>` : "";
+
+      const contacts = sections.contacts ? `
+        <section class="invite-section reveal">
+          <div class="invite-inner">
+            <div class="section-icon">☎</div>
+            <h3>Contactos</h3>
+            <div class="contact-list">
+              ${contact(project.contact1Name, project.contact1Phone)}
+              ${contact(project.contact2Name, project.contact2Phone)}
+            </div>
+          </div>
+        </section>` : "";
+
+      return `
+        ${gate}
+        <article class="invitation" data-effect="${escapeHtml(project.revealEffect || "slide")}" style="--accent:${escapeHtml(project.accentColor)};--accent2:${escapeHtml(project.accent2Color)};--bg:${escapeHtml(project.bgColor)};--text:${escapeHtml(project.textColor)};--panel-rgb:${panelRgb};--panel-alpha:${panelAlpha};--icon-color:${escapeHtml(project.iconColor || "#ffffff")};--icon-size:${Number(project.iconSize || 58)}px;--page-bg:${pageBg};--title-font:'${escapeHtml(titleFont)}', serif">
+          ${music && project.showMusic ? `<button class="music-floating" type="button" data-music title="Reproducir música">♪</button><audio loop src="${escapeHtml(music)}"></audio>` : ""}
+          <section class="hero-invite" style="${heroStyle}">
+            <div>
+              <p class="invite-kicker">${escapeHtml(project.kicker)}</p>
+              <div class="invite-monogram">${escapeHtml(project.monogram)}</div>
+              <h1 class="invite-title">${plainText(project.names)}</h1>
+              <div class="invite-date">${formatDate(project.date)}</div>
+              <p class="invite-phrase">${plainText(project.phrase)}</p>
+            </div>
+          </section>
+          ${guest}
+          ${countdown}
+          ${itinerary}
+          ${locations}
+          ${dress}
+          ${gifts}
+          ${gallery}
+          ${rsvp}
+          ${wishes}
+          ${contacts}
+          <footer class="footer-invite">Invitación digital</footer>
+        </article>
+        ${forExport ? exportScript(project) : ""}
+      `;
+    }
+
+    function contact(name, phone) {
+      if (!name && !phone) return "";
+      const cleanPhone = String(phone || "").replace(/\D/g, "");
+      const href = cleanPhone ? `https://wa.me/${cleanPhone}` : "#";
+      return `
+        <a class="contact-card" href="${href}" target="_blank" rel="noreferrer">
+          <span class="badge">WA</span>
+          <span><strong>${escapeHtml(name || "Contacto")}</strong><br /><small>${escapeHtml(phone || "WhatsApp")}</small></span>
+        </a>`;
+    }
+
+    function exportScript(project = state) {
+      const guestsJson = JSON.stringify(parseGuestsCsv(project.guestsCsv)).replace(/</g, "\\u003c");
+      const eventName = project.names.replace(/\n/g, " ");
+      return `<script>
+        var INVITA_GUESTS = ${guestsJson};
+        var INVITA_EVENT_NAME = ${JSON.stringify(eventName)};
+        function qrUrl(text){
+          return "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(text);
+        }
+        function childLabel(value){
+          value = String(value || "no").toLowerCase();
+          if(["si","sí","yes","con","true"].indexOf(value) >= 0) return "CON NIÑOS";
+          if(["adultos","solo adultos","adults"].indexOf(value) >= 0) return "SOLO ADULTOS";
+          return "NO NIÑOS";
+        }
+        function applyGuestFromUrl(){
+          var id = new URLSearchParams(location.search).get("guest");
+          var guest = INVITA_GUESTS.find(function(item){ return item.id === id; }) || INVITA_GUESTS[0];
+          if(!guest) return;
+          var name = document.querySelector("[data-guest-name]");
+          var passes = document.querySelector("[data-guest-passes]");
+          var table = document.querySelector("[data-guest-table]");
+          var children = document.querySelector("[data-guest-children]");
+          var qr = document.querySelector("[data-guest-qr]");
+          if(name) name.textContent = guest.nombre;
+          if(passes) passes.textContent = guest.pases;
+          if(table) table.textContent = guest.mesa || "";
+          if(children) children.textContent = childLabel(guest.ninos);
+          if(qr) qr.src = qrUrl(["Bienvenido", guest.nombre, guest.pases + " Pases", "Mesa: " + (guest.mesa || ""), INVITA_EVENT_NAME].join("\\n"));
+        }
+        function activateReveals(){
+          var els = Array.from(document.querySelectorAll(".reveal"));
+          if(!("IntersectionObserver" in window)){ els.forEach(function(el){ el.classList.add("in-view"); }); return; }
+          var observer = new IntersectionObserver(function(entries){
+            entries.forEach(function(entry){
+              if(entry.isIntersecting){ entry.target.classList.add("in-view"); observer.unobserve(entry.target); }
+            });
+          }, { threshold: .14 });
+          els.forEach(function(el){ observer.observe(el); });
+        }
+        function tickCountdowns(){
+          document.querySelectorAll("[data-countdown]").forEach(function(box){
+            var target = new Date(box.dataset.countdown + "T00:00:00").getTime();
+            var diff = Math.max(0, target - Date.now());
+            var set = function(sel, val){ var el = box.querySelector(sel); if(el) el.textContent = String(val).padStart(2,"0"); };
+            set("[data-d]", Math.floor(diff / 86400000));
+            set("[data-h]", Math.floor((diff % 86400000) / 3600000));
+            set("[data-m]", Math.floor((diff % 3600000) / 60000));
+            set("[data-s]", Math.floor((diff % 60000) / 1000));
+          });
+        }
+        applyGuestFromUrl();
+        tickCountdowns();
+        activateReveals();
+        setInterval(tickCountdowns, 1000);
+        document.querySelectorAll("[data-open-invite]").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            var gate = btn.closest(".invite-gate");
+            if(gate) gate.classList.add("is-open");
+            var audio = document.querySelector("audio");
+            if(audio) audio.play().catch(function(){});
+            activateReveals();
+          });
+        });
+        document.querySelectorAll("[data-music]").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            var audio = document.querySelector("audio");
+            if(!audio) return;
+            if(audio.paused){ audio.play(); btn.textContent = "Ⅱ"; }
+            else { audio.pause(); btn.textContent = "♪"; }
+          });
+        });
+        document.querySelectorAll("[data-demo-alert]").forEach(function(btn){
+          btn.addEventListener("click", function(){ alert("Gracias por tus buenos deseos."); });
+        });
+      <\/script>`;
+    }
+
+    function renderPreview() {
+      $("#preview").innerHTML = invitationHTML(state);
+      tickCountdowns();
+      bindPreviewActions();
+      lucide.createIcons();
+    }
+
+    function bindPreviewActions() {
+      const gateButton = $("[data-open-invite]", $("#preview"));
+      if (gateButton) {
+        gateButton.addEventListener("click", () => {
+          const gate = $(".invite-gate", $("#preview"));
+          gate?.classList.add("is-open");
+          const audio = $("audio", $("#preview"));
+          if (audio && state.showMusic) audio.play().catch(() => {});
+          requestAnimationFrame(() => activateReveals($("#preview")));
+        });
+      }
+
+      $$("[data-music]", $("#preview")).forEach((button) => {
+        button.addEventListener("click", () => {
+          const audio = $("audio", $("#preview"));
+          if (!audio) return;
+          if (audio.paused) {
+            audio.play().then(() => button.textContent = "Ⅱ").catch(() => toast("El navegador bloqueó la reproducción automática. Prueba con un archivo válido."));
+          } else {
+            audio.pause();
+            button.textContent = "♪";
+          }
+        });
+      });
+
+      $$("[data-demo-alert]", $("#preview")).forEach((button) => {
+        button.addEventListener("click", () => toast("En la invitación exportada este botón muestra un mensaje."));
+      });
+
+      activateReveals($("#preview"));
+    }
+
+    function activateReveals(root = document) {
+      const revealEls = $$(".reveal", root);
+      if (!("IntersectionObserver" in window)) {
+        revealEls.forEach((el) => el.classList.add("in-view"));
+        return;
+      }
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { root: root === document ? null : $("#previewFrame"), threshold: .14 });
+      revealEls.forEach((el) => observer.observe(el));
+    }
+
+    function tickCountdowns() {
+      $$("[data-countdown]").forEach((box) => {
+        const target = new Date(`${box.dataset.countdown}T00:00:00`).getTime();
+        const diff = Math.max(0, target - Date.now());
+        const set = (sel, val) => {
+          const el = $(sel, box);
+          if (el) el.textContent = String(val).padStart(2, "0");
+        };
+        set("[data-d]", Math.floor(diff / 86400000));
+        set("[data-h]", Math.floor((diff % 86400000) / 3600000));
+        set("[data-m]", Math.floor((diff % 3600000) / 60000));
+        set("[data-s]", Math.floor((diff % 60000) / 1000));
+      });
+    }
+
+    async function exportZip() {
+      const fullHtml = buildExportPage();
+      const zip = new JSZip();
+      zip.file("index.html", fullHtml);
+      zip.file("README.md", [
+        "# Invitación digital",
+        "",
+        "Proyecto estático generado con Invita Studio.",
+        "",
+        "## Subir a hosting",
+        "- Netlify: arrastra esta carpeta o el ZIP al panel de Deploys.",
+        "- Vercel: crea un proyecto nuevo y sube estos archivos.",
+        "- Hostinger: sube `index.html` al administrador de archivos.",
+        "- GitHub Pages: publica este archivo en la rama configurada.",
+        "",
+        "No necesita instalación ni compilación."
+      ].join("\\n"));
+
+      const blob = await zip.generateAsync({ type: "blob" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${slugify(state.names)}-invitacion.zip`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast("ZIP generado. Puedes subirlo a Netlify, Vercel, Hostinger o GitHub Pages.");
+    }
+
+    function buildExportPage() {
+      return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(state.names.replace(/\n/g, " "))}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&family=Great+Vibes&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>${exportCSS()}</style>
+</head>
+<body>
+${invitationHTML(state, true)}
+</body>
+</html>`;
+    }
+
+    function exportCSS() {
+      const raw = document.querySelector("style").textContent;
+      const start = raw.indexOf(".invitation {");
+      const end = raw.indexOf(".toast {");
+      const inviteOnly = raw.slice(start, end);
+      return `
+        *{box-sizing:border-box}
+        body{margin:0;background:var(--bg,#f7f2ea);font-family:"Jost",Arial,sans-serif}
+        button,input,textarea,select{font:inherit}
+        button{cursor:pointer}
+        ${inviteOnly}
+        .invitation{max-width:520px;margin:0 auto;box-shadow:0 0 0 1px rgba(0,0,0,.04)}
+        @media(min-width:760px){.invitation{max-width:760px}}
+        @media(max-width:620px){
+          .countdown{grid-template-columns:repeat(2,1fr)}
+          .timeline.centerline{grid-template-columns:1fr 72px 1fr;gap:0 8px}
+          .timeline-center-icon{width:58px;height:58px}
+          .timeline-copy strong{font-size:1.25rem}
+        }
+      `;
+    }
+
+    setInterval(tickCountdowns, 1000);
+    init();
+  </script>
+</body>
+</html>
