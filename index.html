@@ -2009,56 +2009,6 @@
           </div>
         </details>
 
-        <details>
-          <summary><i data-lucide="users"></i> Invitados por familia</summary>
-          <div class="field-grid">
-            <div class="field full">
-              <label>Agregar familia</label>
-              <div class="guest-mini-form">
-                <div class="field">
-                  <label for="guestFormName">Familia</label>
-                  <input id="guestFormName" placeholder="Familia Franco Ortiz" />
-                </div>
-                <div class="field">
-                  <label for="guestFormPasses">Pases</label>
-                  <input id="guestFormPasses" type="number" min="1" value="2" />
-                </div>
-                <div class="field">
-                  <label for="guestFormTable">Mesa</label>
-                  <input id="guestFormTable" placeholder="5" />
-                </div>
-                <div class="field">
-                  <label for="guestFormChildren">Niños</label>
-                  <select id="guestFormChildren">
-                    <option value="no">No niños</option>
-                    <option value="si">Con niños</option>
-                    <option value="adultos">Solo adultos</option>
-                  </select>
-                </div>
-                <button class="btn primary" type="button" id="addGuestFamily">Agregar familia</button>
-              </div>
-            </div>
-            <div class="field full">
-              <label>Familias cargadas</label>
-              <div class="guest-table" id="guestTable"></div>
-            </div>
-            <div class="field full">
-              <label for="previewGuestId">Familia para vista previa</label>
-              <select id="previewGuestId" data-key="previewGuestId"></select>
-            </div>
-            <div class="field full">
-              <label>Links generados</label>
-              <div class="guest-links" id="guestLinks"></div>
-            </div>
-            <details class="field full">
-              <summary><i data-lucide="file-spreadsheet"></i> Importar CSV avanzado</summary>
-              <div class="field full">
-                <label for="guestsCsv">Lista CSV</label>
-                <textarea id="guestsCsv" data-key="guestsCsv" placeholder="id,nombre,pases,mesa,ninos&#10;franco-ortiz,Familia Franco Ortiz,2,5,no"></textarea>
-              </div>
-            </details>
-          </div>
-        </details>
 
         <details>
           <summary><i data-lucide="clock-3"></i> Itinerario</summary>
@@ -2210,14 +2160,14 @@
   <div class="modal-overlay" id="publishModal">
     <div class="modal-box">
       <h3>Publicar invitación</h3>
-      <p>La invitación se subirá como una carpeta nueva en tu repositorio de GitHub Pages y quedará en línea en segundos.</p>
+      <p>Se crea un repositorio nuevo en tu GitHub con esta invitación. GitHub Pages la publica automáticamente con su propia URL.</p>
       <div class="field">
-        <label for="publishSlug">Nombre del evento (sin espacios ni acentos)</label>
-        <input id="publishSlug" placeholder="boda-carina, xv-sofia, cumple-ana..." style="margin-top:6px" />
+        <label for="publishSlug">Nombre del repositorio (sin espacios ni acentos)</label>
+        <input id="publishSlug" placeholder="boda-carina · xv-sofia · cumple-ana" style="margin-top:6px" />
       </div>
       <p style="margin-top:10px;font-size:.78rem">
         URL resultante:<br/>
-        <strong id="slugPreview" style="color:var(--gold)">aliss132015-lgtm.github.io/INVITACIONES/boda-carina/</strong>
+        <strong id="slugPreview" style="color:var(--gold)">aliss132015-lgtm.github.io/boda-carina/</strong>
       </p>
       <div class="publish-progress" id="publishProgress">
         <div class="spinner"></div>
@@ -2314,8 +2264,6 @@
       childrenPolicy: "no",
       childrenText: "NO NIÑOS",
       qrText: "",
-      guestsCsv: "id,nombre,pases,mesa,ninos\nfranco-ortiz,Familia Franco Ortiz,2,5,no\nlopez-garcia,Familia López García,4,12,si\nmendez-ruiz,Familia Méndez Ruiz,3,8,adultos",
-      previewGuestId: "franco-ortiz",
       dressTitle: "Formal elegante",
       dressIcon: "✦",
       dressIconMale: "suit",
@@ -2654,7 +2602,6 @@
       bindStaticEvents();
       syncForm();
       renderListEditors();
-      refreshGuestTools();
       renderPreview();
       lucide.createIcons();
     }
@@ -2671,10 +2618,7 @@
         } else {
           state[key] = event.target.value;
         }
-        if (key === "guestsCsv") {
-          refreshGuestTools();
-        }
-        persistSilent();
+          persistSilent();
         renderPreview();
       });
 
@@ -2732,7 +2676,7 @@
         }
         const slug = slugify(state.names);
         $("#publishSlug").value = slug;
-        $("#slugPreview").textContent = `${GH_OWNER}.github.io/${GH_REPO}/${slug}/`;
+        $("#slugPreview").textContent = `${GH_OWNER}.github.io/${slug}/`;
         $("#publishUrlBox").style.display = "none";
         $("#publishProgress").style.display = "none";
         $("#modalConfirm").disabled = false;
@@ -2750,7 +2694,7 @@
 
       $("#publishSlug").addEventListener("input", () => {
         const v = slugify($("#publishSlug").value || state.names);
-        $("#slugPreview").textContent = `${GH_OWNER}.github.io/${GH_REPO}/${v}/`;
+        $("#slugPreview").textContent = `${GH_OWNER}.github.io/${v}/`;
       });
 
       $("#modalConfirm").addEventListener("click", async () => {
@@ -2801,7 +2745,6 @@
         renderListEditors();
         renderPreview();
       });
-      $("#addGuestFamily").addEventListener("click", addGuestFromMiniForm);
 
       $("#heroFile").addEventListener("change", (event) => readFile(event.target.files[0], (data) => {
         state.heroImageData = data;
@@ -3072,23 +3015,17 @@
       const panelAlpha = Math.max(.2, Math.min(.92, Number(project.panelOpacity || 72) / 100));
       const pageBg = heroImage ? `url('${escapeHtml(heroImage)}')` : escapeHtml(project.bgColor);
       const gateLogo = project.entranceLogoData || project.entranceLogoUrl;
-      const guestData = activeGuest(project);
-      const displayGuestName = guestData?.nombre || project.guestName;
-      const displayPasses = guestData?.pases || project.passes;
-      const displayTable = guestData?.mesa || project.table;
-      const displayChildrenPolicy = guestChildrenPolicy(guestData, project);
-      const childrenLabel = displayChildrenPolicy === "custom"
+      const childrenPolicy = project.childrenPolicy;
+      const childrenLabel = childrenPolicy === "custom"
         ? project.childrenText
-        : displayChildrenPolicy === "yes"
-          ? "CON NIÑOS"
-          : displayChildrenPolicy === "adults"
-            ? "SOLO ADULTOS"
-            : "NO NIÑOS";
+        : childrenPolicy === "yes" ? "CON NIÑOS"
+        : childrenPolicy === "adults" ? "SOLO ADULTOS"
+        : "NO NIÑOS";
       const qrText = project.qrText || [
         "Bienvenido",
-        displayGuestName,
-        `${displayPasses} Pases`,
-        `Mesa: ${displayTable}`,
+        project.guestName,
+        `${project.passes} Pases`,
+        project.table ? `Mesa: ${project.table}` : "",
         project.names.replace(/\n/g, " ")
       ].filter(Boolean).join("\n");
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrText)}`;
@@ -3104,14 +3041,14 @@
         <section class="guest-card reveal">
           <div class="pass-card">
             <p class="pass-kicker">¡Es un placer invitarlos!</p>
-            <strong data-guest-name>${escapeHtml(displayGuestName)}</strong>
+            <strong>${escapeHtml(project.guestName)}</strong>
             <p>${plainText(project.guestIntro)}</p>
-            <div class="children-policy" data-guest-children>${escapeHtml(childrenLabel)} ${displayChildrenPolicy === "no" ? inviteIcon("child") : ""}</div>
-            <div class="pass-number" data-guest-passes>${escapeHtml(displayPasses)}</div>
+            <div class="children-policy">${escapeHtml(childrenLabel)} ${childrenPolicy === "no" ? inviteIcon("child") : ""}</div>
+            <div class="pass-number">${escapeHtml(project.passes)}</div>
             <div class="pass-label">Pases</div>
-            <div class="qr-box"><img data-guest-qr src="${qrUrl}" alt="Código QR del invitado" /></div>
+            <div class="qr-box"><img src="${qrUrl}" alt="Código QR del invitado" /></div>
             <div class="pass-footer">
-              No. Mesa <span data-guest-table>${escapeHtml(displayTable || "")}</span><br />
+              ${project.table ? `No. Mesa <span>${escapeHtml(project.table)}</span><br />` : ""}
               Gracias por confirmar tu asistencia
             </div>
           </div>
@@ -3458,8 +3395,6 @@
     }
 
     function exportScript(project = state) {
-      const guestsJson = JSON.stringify(parseGuestsCsv(project.guestsCsv)).replace(/</g, "\\u003c");
-      const eventName = project.names.replace(/\n/g, " ");
       const eventId = slugify(project.names);
       const hasSupabase = !!(project.supabaseUrl && project.supabaseKey);
       const supabaseBlock = hasSupabase ? `
@@ -3584,36 +3519,7 @@
       ` : "";
 
       return `<script>
-        var INVITA_GUESTS = ${guestsJson};
-        var INVITA_EVENT_NAME = ${JSON.stringify(eventName)};
-
         function escStr(str){ return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-
-        function qrUrl(text){
-          return "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(text);
-        }
-        function childLabel(value){
-          value = String(value || "no").toLowerCase();
-          if(["si","sí","yes","con","true"].indexOf(value) >= 0) return "CON NIÑOS";
-          if(["adultos","solo adultos","adults"].indexOf(value) >= 0) return "SOLO ADULTOS";
-          return "NO NIÑOS";
-        }
-        function applyGuestFromUrl(){
-          var id = new URLSearchParams(location.search).get("guest");
-          var guest = INVITA_GUESTS.find(function(item){ return item.id === id; }) || INVITA_GUESTS[0];
-          if(!guest) return;
-          ${hasSupabase ? "CURRENT_GUEST = guest;" : ""}
-          var name = document.querySelector("[data-guest-name]");
-          var passes = document.querySelector("[data-guest-passes]");
-          var table = document.querySelector("[data-guest-table]");
-          var children = document.querySelector("[data-guest-children]");
-          var qr = document.querySelector("[data-guest-qr]");
-          if(name) name.textContent = guest.nombre;
-          if(passes) passes.textContent = guest.pases;
-          if(table) table.textContent = guest.mesa || "";
-          if(children) children.textContent = childLabel(guest.ninos);
-          if(qr) qr.src = qrUrl(["Bienvenido", guest.nombre, guest.pases + " Pases", "Mesa: " + (guest.mesa || ""), INVITA_EVENT_NAME].join("\\n"));
-        }
         function activateReveals(){
           var els = Array.from(document.querySelectorAll(".reveal"));
           if(!("IntersectionObserver" in window)){ els.forEach(function(el){ el.classList.add("in-view"); }); return; }
@@ -3635,7 +3541,6 @@
             set("[data-s]", Math.floor((diff % 60000) / 1000));
           });
         }
-        applyGuestFromUrl();
         tickCountdowns();
         activateReveals();
         setInterval(tickCountdowns, 1000);
@@ -3826,77 +3731,77 @@ ${invitationHTML(state, true)}
       `;
     }
 
-    // ── PUBLISH TO GITHUB ──
-    async function ghRequest(path, method = "GET", body = null) {
+    // ── PUBLISH TO GITHUB (un repo por invitación) ──
+    async function ghFetch(url, method = "GET", body = null) {
       const headers = {
         "Authorization": `Bearer ${state.githubToken}`,
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28"
       };
       if (body) headers["Content-Type"] = "application/json";
-      const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`, {
+      const res = await fetch(url, {
         method, headers, body: body ? JSON.stringify(body) : undefined
       });
-      if (!res.ok && res.status !== 404) {
+      if (!res.ok && res.status !== 404 && res.status !== 422) {
         const err = await res.json().catch(() => ({ message: res.statusText }));
         throw new Error(err.message || res.statusText);
       }
-      return res.status === 404 ? null : res.json();
+      return { status: res.status, data: res.status === 204 ? null : await res.json().catch(() => null) };
     }
 
-    async function ghUpsertFile(path, content, msg, onProgress) {
-      onProgress(`Verificando ${path}...`);
-      const existing = await ghRequest(path);
-      const sha = existing?.sha;
-      onProgress(`Subiendo ${path}...`);
-      await ghRequest(path, "PUT", {
-        message: msg,
-        content: btoa(unescape(encodeURIComponent(content))),
+    async function publishToGitHub(repoName, onProgress = () => {}) {
+      if (!state.githubToken) throw new Error("Configura tu GitHub Token primero.");
+      const BASE = "https://api.github.com";
+      const eventTitle = state.names.replace(/\n/g, " ");
+
+      // 1. Crear repositorio (si no existe)
+      onProgress("Creando repositorio...");
+      const createRes = await ghFetch(`${BASE}/user/repos`, "POST", {
+        name: repoName,
+        description: `Invitación digital: ${eventTitle}`,
+        homepage: `https://${GH_OWNER}.github.io/${repoName}/`,
+        private: false,
+        auto_init: false
+      });
+      // 422 = ya existe, está bien
+      if (createRes.status !== 201 && createRes.status !== 422) {
+        throw new Error(createRes.data?.message || "No se pudo crear el repositorio");
+      }
+
+      // Esperar un momento si el repo es nuevo
+      if (createRes.status === 201) {
+        onProgress("Inicializando repositorio...");
+        await new Promise(r => setTimeout(r, 1800));
+      }
+
+      // 2. Subir index.html
+      onProgress("Subiendo invitación...");
+      const html = buildExportPage();
+      const content = btoa(unescape(encodeURIComponent(html)));
+      const fileUrl = `${BASE}/repos/${GH_OWNER}/${repoName}/contents/index.html`;
+
+      // Verificar si ya existe (para obtener SHA)
+      const existing = await ghFetch(fileUrl);
+      const sha = existing.data?.sha;
+
+      await ghFetch(fileUrl, "PUT", {
+        message: `Publicar invitación: ${eventTitle}`,
+        content,
         ...(sha ? { sha } : {})
       });
-    }
 
-    async function publishToGitHub(slug, onProgress = () => {}) {
-      if (!state.githubToken) throw new Error("Configura tu GitHub Token primero.");
-      const html = buildExportPage();
+      // 3. Activar GitHub Pages
+      onProgress("Activando GitHub Pages...");
+      const pagesUrl = `${BASE}/repos/${GH_OWNER}/${repoName}/pages`;
+      const pagesExist = await ghFetch(pagesUrl);
+      if (pagesExist.status === 404) {
+        await ghFetch(pagesUrl, "POST", {
+          source: { branch: "main", path: "/" }
+        });
+      }
 
-      // Subir index.html de la invitación
-      await ghUpsertFile(
-        `${slug}/index.html`,
-        html,
-        `Publicar invitación: ${slug}`,
-        onProgress
-      );
-
-      // Actualizar índice de invitaciones publicadas
-      onProgress("Actualizando registro...");
-      try {
-        const indexPath = "_published/index.json";
-        const existing  = await ghRequest(indexPath);
-        let list = [];
-        if (existing?.content) {
-          list = JSON.parse(decodeURIComponent(escape(atob(existing.content.replace(/\n/g, "")))));
-        }
-        const entry = {
-          slug,
-          name: state.names.replace(/\n/g, " "),
-          type: state.eventType,
-          date: state.date,
-          url: `https://${GH_OWNER}.github.io/${GH_REPO}/${slug}/`,
-          published: new Date().toISOString()
-        };
-        const idx = list.findIndex(i => i.slug === slug);
-        if (idx >= 0) list[idx] = entry; else list.unshift(entry);
-        await ghUpsertFile(
-          indexPath,
-          JSON.stringify(list, null, 2),
-          `Actualizar índice: ${slug}`,
-          () => {}
-        );
-      } catch { /* el índice es opcional */ }
-
-      onProgress("¡Publicado!");
-      return `https://${GH_OWNER}.github.io/${GH_REPO}/${slug}/`;
+      onProgress("¡Publicado! (GitHub Pages activa en ~30 seg)");
+      return `https://${GH_OWNER}.github.io/${repoName}/`;
     }
 
     setInterval(tickCountdowns, 1000);
