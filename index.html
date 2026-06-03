@@ -1572,6 +1572,29 @@
     .settings-panel.open { display: block; }
     .settings-panel .field { margin-top: 10px; }
 
+    /* ── ICON EFFECTS ── */
+    @keyframes iconFloat  { 0%,100%{transform:translateY(0)}  50%{transform:translateY(-10px)} }
+    @keyframes iconPulse  { 0%,100%{transform:scale(1)}       50%{transform:scale(1.18)} }
+    @keyframes iconSpin   { from{transform:rotate(0deg)}       to{transform:rotate(360deg)} }
+    @keyframes iconBounce { 0%,100%{transform:translateY(0)}  40%{transform:translateY(-14px)} 60%{transform:translateY(-7px)} }
+    @keyframes iconGlow   { 0%,100%{filter:drop-shadow(0 0 4px currentColor)} 50%{filter:drop-shadow(0 0 16px currentColor)} }
+
+    /* ── GALLERY EFFECTS ── */
+    @keyframes galFade { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes sliderScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+    /* ── ENTRANCE MUSIC BUTTONS ── */
+    .gate-music-btns { display:flex; gap:12px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
+    .gate-music-btn {
+      padding:10px 24px; border:1px solid rgba(255,255,255,.6);
+      border-radius:999px; color:#fff; font-family:'Jost',sans-serif;
+      font-size:.78rem; letter-spacing:.12em; text-transform:uppercase;
+      cursor:pointer; background:rgba(255,255,255,.15); backdrop-filter:blur(4px);
+      transition:background .2s;
+    }
+    .gate-music-btn:hover { background:rgba(255,255,255,.3); }
+    .gate-music-btn.primary { background:var(--accent2); border-color:var(--accent2); }
+
     /* ── RSVP & WISHES & SONGS live styles ── */
     .rsvp-form-wrap input,
     .rsvp-form-wrap textarea,
@@ -1910,8 +1933,12 @@
         <details>
           <summary><i data-lucide="music"></i> Música</summary>
           <div class="field full">
-            <label for="musicUrl">Música por URL</label>
-            <input id="musicUrl" data-key="musicUrl" placeholder="https://..." />
+            <label for="musicUrl">URL de música (MP3 directo o YouTube)</label>
+            <input id="musicUrl" data-key="musicUrl" placeholder="https://... o https://youtu.be/..." />
+          </div>
+          <div style="margin:4px 0 8px;padding:8px 10px;background:rgba(185,142,84,.07);border-radius:6px;font-size:.74rem;color:var(--muted);line-height:1.55">
+            <strong style="color:var(--ink)">YouTube:</strong> Pega el link del video (youtu.be/... o youtube.com/watch?v=...) y se reproducirá automáticamente como música de fondo.<br/>
+            <strong style="color:var(--ink)">MP3 directo:</strong> Sube el archivo con el botón de abajo o pega una URL directa a un archivo .mp3
           </div>
           <div class="field full">
             <label for="musicFile">Subir MP3</label>
@@ -1920,6 +1947,10 @@
           <label class="switch-row">
             <span>Mostrar botón de música</span>
             <span class="switch"><input type="checkbox" data-key="showMusic" /><span class="slider"></span></span>
+          </label>
+          <label class="switch-row">
+            <span>Botón "Con música / Sin música" en entrada</span>
+            <span class="switch"><input type="checkbox" data-key="entranceMusic" /><span class="slider"></span></span>
           </label>
         </details>
 
@@ -1938,6 +1969,17 @@
             <div class="field">
               <label for="iconSize">Tamaño iconos</label>
               <input id="iconSize" data-key="iconSize" type="range" min="28" max="96" />
+            </div>
+            <div class="field full">
+              <label for="iconEffect">Efecto de iconos</label>
+              <select id="iconEffect" data-key="iconEffect">
+                <option value="float">Flotar (arriba y abajo)</option>
+                <option value="pulse">Pulsar (escala)</option>
+                <option value="spin">Girar lento</option>
+                <option value="bounce">Rebotar</option>
+                <option value="glow">Brillar</option>
+                <option value="none">Sin efecto</option>
+              </select>
             </div>
             <div class="field"><label for="countdownIcon">Cuenta regresiva</label><input id="countdownIcon" data-key="countdownIcon" data-icon-input /></div>
             <div class="field"><label for="itineraryIcon">Itinerario</label><input id="itineraryIcon" data-key="itineraryIcon" data-icon-input /></div>
@@ -2028,6 +2070,18 @@
 
         <details>
           <summary><i data-lucide="images"></i> Galería</summary>
+          <div class="field-grid" style="margin-bottom:12px">
+            <div class="field full">
+              <label for="galleryEffect">Efecto de galería</label>
+              <select id="galleryEffect" data-key="galleryEffect">
+                <option value="grid">Grid clásico</option>
+                <option value="slider">Slider automático</option>
+                <option value="masonry">Masonry (Pinterest)</option>
+                <option value="polaroid">Polaroid con rotación</option>
+                <option value="fade">Fade secuencial</option>
+              </select>
+            </div>
+          </div>
           <div class="list-editor" id="galleryEditor"></div>
           <button class="btn ghost" type="button" id="addGallery"><i data-lucide="plus"></i> Agregar foto</button>
         </details>
@@ -2245,6 +2299,9 @@
       entranceBg: "#f4dddd",
       entranceLogoUrl: "",
       entranceLogoData: "",
+      entranceMusic: true,
+      galleryEffect: "grid",
+      iconEffect: "float",
       revealEffect: "slide",
       itineraryLayout: "centerline",
       musicUrl: "",
@@ -3045,10 +3102,18 @@
         project.names.replace(/\n/g, " ")
       ].filter(Boolean).join("\n");
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrText)}`;
+      const hasYT = /youtu\.?be/.test(project.musicUrl || "");
+      const ytId  = hasYT ? (project.musicUrl.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)||[])[1] : null;
+
       const gate = project.entranceType !== "none" ? `
         <div class="invite-gate" data-gate="${escapeHtml(project.entranceType || "seal")}" style="--gate-bg:${escapeHtml(project.entranceBg || project.bgColor)}">
           <div class="gate-center">
-            <button class="gate-button" type="button" data-open-invite>${escapeHtml(project.entranceText || "Click Aquí")}</button>
+            ${project.entranceMusic && (music || ytId) ? `
+            <div class="gate-music-btns">
+              <button class="gate-music-btn primary" type="button" data-open-invite data-with-music="1">🎵 ${escapeHtml(project.entranceText || "Ingresar con música")}</button>
+              <button class="gate-music-btn" type="button" data-open-invite data-with-music="0">Ingresar sin música</button>
+            </div>` : `
+            <button class="gate-button" type="button" data-open-invite>${escapeHtml(project.entranceText || "Click Aquí")}</button>`}
             <div class="gate-mark">${gateLogo ? `<img src="${escapeHtml(gateLogo)}" alt="Sello de entrada" />` : `<span>${escapeHtml(project.monogram)}</span>`}</div>
           </div>
         </div>` : "";
@@ -3073,7 +3138,7 @@
       const countdown = sections.countdown ? `
         <section class="invite-section reveal">
           <div class="invite-inner">
-            <div class="section-icon">${inviteIcon(project.countdownIcon)}</div>
+            <div class="section-icon" style="${iconEffectCss}">${inviteIcon(project.countdownIcon)}</div>
             <h3>Faltan</h3>
             <div class="countdown" data-countdown="${escapeHtml(project.date)}">
               <div class="count-item"><strong data-d>00</strong><span>Días</span></div>
@@ -3088,7 +3153,7 @@
       const itinerary = sections.itinerary ? `
         <section class="invite-section reveal">
           <div class="invite-inner">
-            <div class="section-icon">${inviteIcon(project.itineraryIcon)}</div>
+            <div class="section-icon" style="${iconEffectCss}">${inviteIcon(project.itineraryIcon)}</div>
             <h3>Itinerario</h3>
             <div class="timeline ${project.itineraryLayout === "centerline" ? "centerline" : ""}">
               ${itineraryItems.map((item, index) => project.itineraryLayout === "centerline"
@@ -3102,7 +3167,7 @@
       const locations = sections.locations ? `
         <section class="invite-section reveal">
           <div class="invite-inner">
-            <div class="section-icon">${inviteIcon(project.locationsIcon)}</div>
+            <div class="section-icon" style="${iconEffectCss}">${inviteIcon(project.locationsIcon)}</div>
             <h3>Ubicaciones</h3>
             <div class="location-grid">
               ${project.locations.map((item) => `
@@ -3146,14 +3211,55 @@
           </div>
         </section>` : "";
 
+      const galleryEffect = project.galleryEffect || "grid";
+      const iconEffectCss = {
+        float:  "animation:iconFloat 3s ease-in-out infinite",
+        pulse:  "animation:iconPulse 2s ease-in-out infinite",
+        spin:   "animation:iconSpin 8s linear infinite",
+        bounce: "animation:iconBounce 1.4s ease-in-out infinite",
+        glow:   "animation:iconGlow 2s ease-in-out infinite",
+        none:   ""
+      }[project.iconEffect || "float"] || "";
+
+      function galleryHTML(imgs) {
+        const filled = imgs.filter(s => s);
+        if (!filled.length) return '<div class="gallery-placeholder">✦</div>';
+        if (galleryEffect === "slider") {
+          const doubled = [...filled, ...filled]; // loop infinito
+          return `<div class="gallery-slider-wrap" style="overflow:hidden;position:relative">
+            <div class="gallery-slider-track" style="display:flex;gap:10px;animation:sliderScroll ${Math.max(10, filled.length * 4)}s linear infinite">
+              ${doubled.map(s=>`<img src="${escapeHtml(s)}" style="width:240px;height:180px;object-fit:cover;border-radius:8px;flex-shrink:0" />`).join("")}
+            </div></div>`;
+        }
+        if (galleryEffect === "masonry") {
+          return `<div style="columns:2;gap:8px;margin-top:20px">
+            ${filled.map(s=>`<img src="${escapeHtml(s)}" style="width:100%;margin-bottom:8px;border-radius:8px;display:block" />`).join("")}
+          </div>`;
+        }
+        if (galleryEffect === "polaroid") {
+          const rotations = [-3,2,-1,3,-2,1,-3,2];
+          return `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-top:20px;padding:16px">
+            ${filled.map((s,i)=>`<div style="background:#fff;padding:10px 10px 30px;box-shadow:0 6px 24px rgba(0,0,0,.15);transform:rotate(${rotations[i%8]}deg);transition:transform .3s" onmouseover="this.style.transform='rotate(0deg) scale(1.05)'" onmouseout="this.style.transform='rotate(${rotations[i%8]}deg)'">
+              <img src="${escapeHtml(s)}" style="width:160px;height:140px;object-fit:cover;display:block" /></div>`).join("")}
+          </div>`;
+        }
+        if (galleryEffect === "fade") {
+          return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px">
+            ${filled.map((s,i)=>`<img src="${escapeHtml(s)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;animation:galFade .6s ease ${i*.15}s both" />`).join("")}
+          </div>`;
+        }
+        // default: grid
+        return `<div class="gallery-grid">
+          ${filled.map(s=>`<img src="${escapeHtml(s)}" alt="Foto" />`).join("")}
+        </div>`;
+      }
+
       const gallery = sections.gallery ? `
         <section class="invite-section reveal">
           <div class="invite-inner">
-            <div class="section-icon">${inviteIcon(project.galleryIcon)}</div>
+            <div class="section-icon" style="${iconEffectCss}">${inviteIcon(project.galleryIcon)}</div>
             <h3>Galería</h3>
-            <div class="gallery-grid">
-              ${project.gallery.map((src) => src ? `<img src="${escapeHtml(src)}" alt="Foto de la invitación" />` : `<div class="gallery-placeholder">✦</div>`).join("")}
-            </div>
+            ${galleryHTML(project.gallery)}
           </div>
         </section>` : "";
 
@@ -3163,7 +3269,7 @@
       const rsvp = sections.rsvp ? `
         <section class="invite-section reveal" id="sec-rsvp">
           <div class="invite-inner">
-            <div class="section-icon">${inviteIcon(project.rsvpIcon)}</div>
+            <div class="section-icon" style="${iconEffectCss}">${inviteIcon(project.rsvpIcon)}</div>
             <h3>Confirma tu asistencia</h3>
             <p>${plainText(project.rsvpText)}</p>
             ${project.rsvpDeadline ? `<p style="font-size:.82rem;opacity:.75">Fecha límite: <strong>${escapeHtml(project.rsvpDeadline)}</strong></p>` : ""}
@@ -3185,7 +3291,7 @@
       const wishes = sections.wishes ? `
         <section class="invite-section reveal" id="sec-wishes">
           <div class="invite-inner">
-            <div class="section-icon">${inviteIcon(project.wishesIcon)}</div>
+            <div class="section-icon" style="${iconEffectCss}">${inviteIcon(project.wishesIcon)}</div>
             <h3>Buenos deseos</h3>
             ${hasSupabase ? `
             <div id="wishes-wall" style="display:grid;gap:12px;margin-bottom:22px;max-height:340px;overflow-y:auto;padding-right:4px"></div>
@@ -3235,7 +3341,7 @@
       return `
         ${gate}
         <article class="invitation" data-effect="${escapeHtml(project.revealEffect || "slide")}" style="--accent:${escapeHtml(project.accentColor)};--accent2:${escapeHtml(project.accent2Color)};--bg:${escapeHtml(project.bgColor)};--text:${escapeHtml(project.textColor)};--panel-rgb:${panelRgb};--panel-alpha:${panelAlpha};--icon-color:${escapeHtml(project.iconColor || "#ffffff")};--icon-size:${Number(project.iconSize || 58)}px;--page-bg:${pageBg};--title-font:'${escapeHtml(titleFont)}', serif">
-          ${music && project.showMusic ? `<button class="music-floating" type="button" data-music title="Reproducir música">♪</button><audio loop src="${escapeHtml(music)}"></audio>` : ""}
+          ${ytId ? `<button class="music-floating" type="button" data-music title="Reproducir música">♪</button><div id="yt-bg-player" style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none"></div>` : music && project.showMusic ? `<button class="music-floating" type="button" data-music title="Reproducir música">♪</button><audio id="bg-audio" loop src="${escapeHtml(music)}"></audio>` : ""}
           <section class="hero-invite" style="${heroStyle}">
             <div>
               <p class="invite-kicker">${escapeHtml(project.kicker)}</p>
@@ -3560,22 +3666,53 @@
         tickCountdowns();
         activateReveals();
         setInterval(tickCountdowns, 1000);
+        /* ── YOUTUBE SUPPORT ── */
+        var ytPlayer = null;
+        var ytReady = false;
+        var ytVideoId = ${JSON.stringify(ytId || "")};
+        if(ytVideoId){
+          var tag = document.createElement("script");
+          tag.src = "https://www.youtube.com/iframe_api";
+          document.head.appendChild(tag);
+          window.onYouTubeIframeAPIReady = function(){
+            ytReady = true;
+            ytPlayer = new YT.Player("yt-bg-player", {
+              videoId: ytVideoId,
+              playerVars:{ autoplay:0, loop:1, playlist:ytVideoId, controls:0, mute:0 },
+              events:{ onReady:function(e){ /* wait for user click */ } }
+            });
+          };
+        }
+
+        function startMusic(withMusic){
+          if(!withMusic) return;
+          if(ytPlayer && ytReady){ try{ ytPlayer.playVideo(); }catch(e){} }
+          else { var a = document.getElementById("bg-audio"); if(a) a.play().catch(function(){}); }
+        }
+        function toggleMusic(btn){
+          if(ytPlayer && ytReady){
+            var s = ytPlayer.getPlayerState();
+            if(s === 1){ ytPlayer.pauseVideo(); btn.textContent="♪"; }
+            else { ytPlayer.playVideo(); btn.textContent="Ⅱ"; }
+          } else {
+            var a = document.getElementById("bg-audio");
+            if(!a) return;
+            if(a.paused){ a.play(); btn.textContent="Ⅱ"; }
+            else { a.pause(); btn.textContent="♪"; }
+          }
+        }
+
         document.querySelectorAll("[data-open-invite]").forEach(function(btn){
           btn.addEventListener("click", function(){
             var gate = btn.closest(".invite-gate");
             if(gate) gate.classList.add("is-open");
-            var audio = document.querySelector("audio");
-            if(audio) audio.play().catch(function(){});
+            var withMusic = btn.dataset.withMusic !== "0";
+            setTimeout(function(){ startMusic(withMusic); }, 400);
             activateReveals();
           });
         });
         document.querySelectorAll("[data-music]").forEach(function(btn){
-          btn.addEventListener("click", function(){
-            var audio = document.querySelector("audio");
-            if(!audio) return;
-            if(audio.paused){ audio.play(); btn.textContent = "Ⅱ"; }
-            else { audio.pause(); btn.textContent = "♪"; }
-          });
+          btn.addEventListener("click", function(){ toggleMusic(btn); });
         });
         ${supabaseBlock}
       <\/script>`;
@@ -3726,11 +3863,25 @@ ${invitationHTML(state, true)}
       const start = raw.indexOf(".invitation {");
       const end = raw.indexOf(".toast {");
       const inviteOnly = raw.slice(start, end);
+      const animCSS = `
+        @keyframes iconFloat  { 0%,100%{transform:translateY(0)}  50%{transform:translateY(-10px)} }
+        @keyframes iconPulse  { 0%,100%{transform:scale(1)}       50%{transform:scale(1.18)} }
+        @keyframes iconSpin   { from{transform:rotate(0deg)}       to{transform:rotate(360deg)} }
+        @keyframes iconBounce { 0%,100%{transform:translateY(0)}  40%{transform:translateY(-14px)} 60%{transform:translateY(-7px)} }
+        @keyframes iconGlow   { 0%,100%{filter:drop-shadow(0 0 4px currentColor)} 50%{filter:drop-shadow(0 0 16px currentColor)} }
+        @keyframes galFade    { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes sliderScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        .gate-music-btns{display:flex;gap:12px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+        .gate-music-btn{padding:10px 24px;border:1px solid rgba(255,255,255,.6);border-radius:999px;color:#fff;font-family:'Jost',sans-serif;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;background:rgba(255,255,255,.15);transition:background .2s}
+        .gate-music-btn:hover{background:rgba(255,255,255,.3)}
+        .gate-music-btn.primary{background:var(--accent2);border-color:var(--accent2)}
+      `;
       return `
         *{box-sizing:border-box}
         body{margin:0;background:var(--bg,#f7f2ea);font-family:"Jost",Arial,sans-serif}
         button,input,textarea,select{font:inherit}
         button{cursor:pointer}
+        ${animCSS}
         ${inviteOnly}
         .invitation{max-width:520px;margin:0 auto;box-shadow:0 0 0 1px rgba(0,0,0,.04)}
         @media(min-width:760px){.invitation{max-width:760px}}
