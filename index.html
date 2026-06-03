@@ -2666,6 +2666,12 @@
         lucide.createIcons();
       });
 
+      // Sincronizar token (está fuera del form principal)
+      $("#githubToken").addEventListener("input", (e) => {
+        state.githubToken = e.target.value;
+        persistSilent();
+      });
+
       // ── PUBLISH MODAL ──
       $("#publishGH").addEventListener("click", () => {
         if (!state.githubToken) {
@@ -2904,8 +2910,11 @@
       $$("[data-key]").forEach((input) => {
         const key = input.dataset.key;
         if (input.type === "checkbox") input.checked = Boolean(state[key]);
-        else input.value = state[key] ?? "";
+        else if (input.type !== "password") input.value = state[key] ?? "";
       });
+      // Sincronizar campo password por separado
+      const tokenInput = $("#githubToken");
+      if (tokenInput && state.githubToken) tokenInput.value = state.githubToken;
       $$("[data-section]").forEach((input) => {
         input.checked = Boolean(state.sections[input.dataset.section]);
       });
