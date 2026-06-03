@@ -3123,7 +3123,7 @@
 
       const heroImage = project.heroImageData || project.heroBgUrl;
       const heroStyle = heroImage ? `--hero-bg:url('${escapeHtml(heroImage)}')` : "";
-      const music = project.musicData || project.musicUrl;
+      const music = musicSrc;
       const sections = project.sections || {};
       const titleFont = project.titleFont || "Cormorant Garamond";
       const panelRgb = hexToRgb(project.panelColor);
@@ -3144,8 +3144,8 @@
         project.names.replace(/\n/g, " ")
       ].filter(Boolean).join("\n");
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrText)}`;
-      const hasYT = /youtu\.?be/.test(project.musicUrl || "");
-      const ytId  = hasYT ? (project.musicUrl.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)||[])[1] : null;
+      const musicSrc = project.musicData || project.musicUrl || "";
+      const ytId = extractYtId(musicSrc);
 
       const gate = project.entranceType !== "none" ? `
         <div class="invite-gate" data-gate="${escapeHtml(project.entranceType || "seal")}" style="--gate-bg:${escapeHtml(project.entranceBg || project.bgColor)}">
@@ -3515,8 +3515,16 @@
       `;
     }
 
+    function extractYtId(url) {
+      if (!url) return null;
+      const m = String(url).match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+      return m ? m[1] : null;
+    }
+
     function exportScript(project = state) {
       const eventId = slugify(project.names);
+      const musicSrc = project.musicData || project.musicUrl || "";
+      const ytId = extractYtId(musicSrc);
       const hasSupabase = !!(project.supabaseUrl && project.supabaseKey);
       const supabaseBlock = hasSupabase ? `
         /* ── SUPABASE ── */
@@ -3724,27 +3732,34 @@
       lucide.createIcons();
     }
 
+    function startPreviewMusic() {
+      const audio = $("audio", $("#preview"));
+      if (audio) { audio.play().catch(() => {}); return; }
+      // YouTube en preview: mostrar aviso
+      const ytId = extractYtId(state.musicData || state.musicUrl || "");
+      if (ytId) toast("🎵 YouTube activo — la música suena al exportar y abrir la invitación.");
+    }
+
     function bindPreviewActions() {
-      const gateButton = $("[data-open-invite]", $("#preview"));
-      if (gateButton) {
-        gateButton.addEventListener("click", () => {
-          const gate = $(".invite-gate", $("#preview"));
+      // Abrir la invitación al hacer clic en la pantalla de entrada
+      $$("[data-open-invite]", $("#preview")).forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const gate = btn.closest(".invite-gate");
           gate?.classList.add("is-open");
-          const audio = $("audio", $("#preview"));
-          if (audio && state.showMusic) audio.play().catch(() => {});
+          const withMusic = btn.dataset.withMusic !== "0";
+          if (withMusic) startPreviewMusic();
           requestAnimationFrame(() => activateReveals($("#preview")));
         });
-      }
+      });
 
       $$("[data-music]", $("#preview")).forEach((button) => {
         button.addEventListener("click", () => {
           const audio = $("audio", $("#preview"));
-          if (!audio) return;
-          if (audio.paused) {
-            audio.play().then(() => button.textContent = "Ⅱ").catch(() => toast("El navegador bloqueó la reproducción automática. Prueba con un archivo válido."));
+          if (audio) {
+            if (audio.paused) { audio.play().then(() => button.textContent = "Ⅱ").catch(() => toast("Usa un archivo MP3 directo para la vista previa.")); }
+            else { audio.pause(); button.textContent = "♪"; }
           } else {
-            audio.pause();
-            button.textContent = "♪";
+            toast("YouTube: la música solo suena en la invitación exportada.");
           }
         });
       });
