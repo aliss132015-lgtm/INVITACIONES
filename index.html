@@ -343,6 +343,47 @@
       word-break: break-all;
     }
 
+    .guest-mini-form {
+      display: grid;
+      grid-template-columns: 1.4fr .7fr .7fr .9fr;
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .guest-mini-form .field {
+      margin: 0;
+    }
+
+    .guest-table {
+      display: grid;
+      gap: 8px;
+      max-height: 240px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 8px;
+    }
+
+    .guest-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 9px;
+      border-radius: var(--radius);
+      background: var(--paper);
+      font-size: .8rem;
+    }
+
+    .guest-row small {
+      color: var(--muted);
+    }
+
     .list-row {
       display: grid;
       grid-template-columns: 1fr 1fr 40px;
@@ -452,6 +493,51 @@
     .preview-frame.desktop {
       width: min(100%, 940px);
       border-radius: 12px;
+    }
+
+    .preview-frame:not(.desktop) .timeline.centerline {
+      display: block;
+      padding-left: 70px;
+      text-align: left;
+    }
+
+    .preview-frame:not(.desktop) .timeline.centerline::before {
+      left: 35px;
+      top: 28px;
+      bottom: 28px;
+    }
+
+    .preview-frame:not(.desktop) .timeline.centerline .timeline-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: 0;
+      position: relative;
+      padding: 18px 12px 18px 0;
+      border-bottom: 1px solid rgba(255,255,255,.18);
+    }
+
+    .preview-frame:not(.desktop) .timeline.centerline .timeline-row[data-side="left"] .timeline-copy,
+    .preview-frame:not(.desktop) .timeline.centerline .timeline-row[data-side="right"] .timeline-copy {
+      grid-column: 1;
+      text-align: left;
+    }
+
+    .preview-frame:not(.desktop) .timeline-center-icon {
+      position: absolute;
+      left: -68px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 58px;
+      height: 58px;
+    }
+
+    .preview-frame:not(.desktop) .timeline-center-icon svg {
+      width: 42px;
+      height: 42px;
+    }
+
+    .preview-frame:not(.desktop) .dress-layout {
+      grid-template-columns: 1fr;
     }
 
     .invitation {
@@ -914,7 +1000,7 @@
     .timeline.centerline .timeline-row {
       display: grid;
       grid-column: 1 / -1;
-      grid-template-columns: subgrid;
+      grid-template-columns: 1fr 88px 1fr;
       align-items: center;
       min-height: calc(var(--icon-size) * 1.75);
     }
@@ -1197,7 +1283,7 @@
         padding: 18px 12px;
       }
 
-      .field-grid, .list-row, .list-row.gallery {
+      .field-grid, .list-row, .list-row.gallery, .guest-mini-form {
         grid-template-columns: 1fr;
       }
 
@@ -1225,16 +1311,48 @@
       }
 
       .timeline.centerline {
-        grid-template-columns: 1fr 64px 1fr;
-        gap: 0 8px;
+        display: block;
+        padding-left: 70px;
+        text-align: left;
+      }
+
+      .timeline.centerline::before {
+        left: 35px;
+        top: 28px;
+        bottom: 28px;
       }
 
       .timeline.centerline .timeline-row {
-        min-height: 116px;
+        display: grid;
+        grid-template-columns: 1fr;
+        min-height: 0;
+        position: relative;
+        padding: 18px 12px 18px 0;
+        border-bottom: 1px solid rgba(255,255,255,.18);
+      }
+
+      .timeline.centerline .timeline-row[data-side="left"] .timeline-copy,
+      .timeline.centerline .timeline-row[data-side="right"] .timeline-copy {
+        grid-column: 1;
+        text-align: left;
       }
 
       .timeline-copy strong {
         font-size: 1.25rem;
+      }
+
+      .timeline-center-icon {
+        position: absolute;
+        left: -68px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 58px;
+        height: 58px;
+      }
+
+      .timeline-center-icon svg {
+        width: 42px;
+        height: 42px;
       }
 
       .dress-layout {
@@ -1485,8 +1603,34 @@
           <summary><i data-lucide="users"></i> Invitados por familia</summary>
           <div class="field-grid">
             <div class="field full">
-              <label for="guestsCsv">Lista CSV</label>
-              <textarea id="guestsCsv" data-key="guestsCsv" placeholder="id,nombre,pases,mesa,ninos&#10;franco-ortiz,Familia Franco Ortiz,2,5,no"></textarea>
+              <label>Agregar familia</label>
+              <div class="guest-mini-form">
+                <div class="field">
+                  <label for="guestFormName">Familia</label>
+                  <input id="guestFormName" placeholder="Familia Franco Ortiz" />
+                </div>
+                <div class="field">
+                  <label for="guestFormPasses">Pases</label>
+                  <input id="guestFormPasses" type="number" min="1" value="2" />
+                </div>
+                <div class="field">
+                  <label for="guestFormTable">Mesa</label>
+                  <input id="guestFormTable" placeholder="5" />
+                </div>
+                <div class="field">
+                  <label for="guestFormChildren">Niños</label>
+                  <select id="guestFormChildren">
+                    <option value="no">No niños</option>
+                    <option value="si">Con niños</option>
+                    <option value="adultos">Solo adultos</option>
+                  </select>
+                </div>
+                <button class="btn primary" type="button" id="addGuestFamily">Agregar familia</button>
+              </div>
+            </div>
+            <div class="field full">
+              <label>Familias cargadas</label>
+              <div class="guest-table" id="guestTable"></div>
             </div>
             <div class="field full">
               <label for="previewGuestId">Familia para vista previa</label>
@@ -1496,6 +1640,13 @@
               <label>Links generados</label>
               <div class="guest-links" id="guestLinks"></div>
             </div>
+            <details class="field full">
+              <summary><i data-lucide="file-spreadsheet"></i> Importar CSV avanzado</summary>
+              <div class="field full">
+                <label for="guestsCsv">Lista CSV</label>
+                <textarea id="guestsCsv" data-key="guestsCsv" placeholder="id,nombre,pases,mesa,ninos&#10;franco-ortiz,Familia Franco Ortiz,2,5,no"></textarea>
+              </div>
+            </details>
           </div>
         </details>
 
@@ -1920,6 +2071,78 @@
           });
         });
       }
+      const table = $("#guestTable");
+      if (table) {
+        table.innerHTML = guests.length ? guests.map((guest) => `
+          <div class="guest-row">
+            <span><strong>${escapeHtml(guest.nombre)}</strong><br><small>${escapeHtml(guest.pases)} pases · Mesa ${escapeHtml(guest.mesa || "-")} · ${escapeHtml(guest.ninos || "no")}</small></span>
+            <button class="btn ghost" type="button" data-preview-guest="${escapeHtml(guest.id)}">Ver</button>
+            <button class="btn ghost" type="button" data-remove-guest="${escapeHtml(guest.id)}">Eliminar</button>
+          </div>
+        `).join("") : `<div class="guest-row"><span>No hay familias cargadas.</span></div>`;
+        $$("[data-preview-guest]", table).forEach((button) => {
+          button.addEventListener("click", () => {
+            state.previewGuestId = button.dataset.previewGuest;
+            const select = $("#previewGuestId");
+            if (select) select.value = state.previewGuestId;
+            persistSilent();
+            renderPreview();
+          });
+        });
+        $$("[data-remove-guest]", table).forEach((button) => {
+          button.addEventListener("click", () => {
+            const remaining = parseGuestsCsv(state.guestsCsv).filter((guest) => guest.id !== button.dataset.removeGuest);
+            state.guestsCsv = guestsToCsv(remaining);
+            syncForm();
+            refreshGuestTools();
+            renderPreview();
+            persistSilent();
+          });
+        });
+      }
+    }
+
+    function guestsToCsv(guests = []) {
+      return ["id,nombre,pases,mesa,ninos", ...guests.map((guest) => [
+        guest.id,
+        guest.nombre,
+        guest.pases,
+        guest.mesa,
+        guest.ninos
+      ].map((value) => String(value || "").includes(",") ? `"${String(value).replaceAll('"', '""')}"` : value).join(","))].join("\n");
+    }
+
+    function addGuestFromMiniForm() {
+      const name = $("#guestFormName")?.value.trim();
+      const passes = $("#guestFormPasses")?.value || "1";
+      const table = $("#guestFormTable")?.value || "";
+      const ninos = $("#guestFormChildren")?.value || "no";
+      if (!name) {
+        toast("Escribe el nombre de la familia.");
+        return;
+      }
+      const guests = parseGuestsCsv(state.guestsCsv);
+      const baseId = slugify(name);
+      let id = baseId;
+      let suffix = 2;
+      while (guests.some((guest) => guest.id === id)) {
+        id = `${baseId}-${suffix}`;
+        suffix += 1;
+      }
+      guests.push({ id, nombre: name, pases: passes, mesa: table, ninos, estado: "pendiente" });
+      state.guestsCsv = guestsToCsv(guests);
+      state.previewGuestId = id;
+      const nameInput = $("#guestFormName");
+      const tableInput = $("#guestFormTable");
+      const passesInput = $("#guestFormPasses");
+      if (nameInput) nameInput.value = "";
+      if (tableInput) tableInput.value = "";
+      if (passesInput) passesInput.value = "2";
+      syncForm();
+      refreshGuestTools();
+      renderPreview();
+      persistSilent();
+      toast("Familia agregada.");
     }
 
     function toast(message) {
@@ -2020,6 +2243,7 @@
         renderListEditors();
         renderPreview();
       });
+      $("#addGuestFamily").addEventListener("click", addGuestFromMiniForm);
 
       $("#heroFile").addEventListener("change", (event) => readFile(event.target.files[0], (data) => {
         state.heroImageData = data;
@@ -2675,8 +2899,12 @@ ${invitationHTML(state, true)}
         @media(min-width:760px){.invitation{max-width:760px}}
         @media(max-width:620px){
           .countdown{grid-template-columns:repeat(2,1fr)}
-          .timeline.centerline{grid-template-columns:1fr 72px 1fr;gap:0 8px}
-          .timeline-center-icon{width:58px;height:58px}
+          .timeline.centerline{display:block;padding-left:70px;text-align:left}
+          .timeline.centerline::before{left:35px;top:28px;bottom:28px}
+          .timeline.centerline .timeline-row{display:grid;grid-template-columns:1fr;min-height:0;position:relative;padding:18px 12px 18px 0;border-bottom:1px solid rgba(255,255,255,.18)}
+          .timeline.centerline .timeline-row[data-side="left"] .timeline-copy,.timeline.centerline .timeline-row[data-side="right"] .timeline-copy{grid-column:1;text-align:left}
+          .timeline-center-icon{position:absolute;left:-68px;top:50%;transform:translateY(-50%);width:58px;height:58px}
+          .timeline-center-icon svg{width:42px;height:42px}
           .timeline-copy strong{font-size:1.25rem}
         }
       `;
