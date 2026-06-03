@@ -1584,16 +1584,36 @@
     @keyframes sliderScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 
     /* ── ENTRANCE MUSIC BUTTONS ── */
-    .gate-music-btns { display:flex; gap:12px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
-    .gate-music-btn {
-      padding:10px 24px; border:1px solid rgba(255,255,255,.6);
-      border-radius:999px; color:#fff; font-family:'Jost',sans-serif;
-      font-size:.78rem; letter-spacing:.12em; text-transform:uppercase;
-      cursor:pointer; background:rgba(255,255,255,.15); backdrop-filter:blur(4px);
-      transition:background .2s;
+    .gate-music-btns {
+      display: flex; gap: 10px; justify-content: center;
+      margin-top: 24px; flex-wrap: wrap;
     }
-    .gate-music-btn:hover { background:rgba(255,255,255,.3); }
-    .gate-music-btn.primary { background:var(--accent2); border-color:var(--accent2); }
+    .gate-music-btn {
+      padding: 12px 28px;
+      border: 1.5px solid rgba(255,255,255,.55);
+      border-radius: 999px;
+      color: #fff;
+      font-family: 'Jost', sans-serif;
+      font-size: .74rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: rgba(255,255,255,.1);
+      backdrop-filter: blur(8px);
+      transition: all .25s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .gate-music-btn:hover {
+      background: rgba(255,255,255,.22);
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,.8);
+    }
+    .gate-music-btn.primary {
+      background: var(--accent2, #78866b);
+      border-color: transparent;
+      box-shadow: 0 8px 28px rgba(0,0,0,.25);
+    }
+    .gate-music-btn.primary:hover { filter: brightness(1.15); }
 
     /* ── RSVP & WISHES & SONGS live styles ── */
     .rsvp-form-wrap input,
@@ -3149,13 +3169,16 @@
       const gate = project.entranceType !== "none" ? `
         <div class="invite-gate" data-gate="${escapeHtml(project.entranceType || "seal")}" style="--gate-bg:${escapeHtml(project.entranceBg || project.bgColor)}">
           <div class="gate-center">
-            ${project.entranceMusic && (music || ytId) ? `
+            <div class="gate-mark">${gateLogo ? `<img src="${escapeHtml(gateLogo)}" alt="Sello de entrada" />` : `<span>${escapeHtml(project.monogram)}</span>`}</div>
+            ${project.entranceMusic ? `
             <div class="gate-music-btns">
-              <button class="gate-music-btn primary" type="button" data-open-invite data-with-music="1">🎵 ${escapeHtml(project.entranceText || "Ingresar con música")}</button>
-              <button class="gate-music-btn" type="button" data-open-invite data-with-music="0">Ingresar sin música</button>
+              <button class="gate-music-btn primary" type="button" data-open-invite data-with-music="1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:6px"><path d="M9 18V5l12-2v13M9 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm12 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"/></svg>
+                Con música
+              </button>
+              <button class="gate-music-btn" type="button" data-open-invite data-with-music="0">Sin música</button>
             </div>` : `
             <button class="gate-button" type="button" data-open-invite>${escapeHtml(project.entranceText || "Click Aquí")}</button>`}
-            <div class="gate-mark">${gateLogo ? `<img src="${escapeHtml(gateLogo)}" alt="Sello de entrada" />` : `<span>${escapeHtml(project.monogram)}</span>`}</div>
           </div>
         </div>` : "";
 
@@ -3886,10 +3909,10 @@ ${invitationHTML(state, true)}
         @keyframes iconGlow   { 0%,100%{filter:drop-shadow(0 0 4px currentColor)} 50%{filter:drop-shadow(0 0 16px currentColor)} }
         @keyframes galFade    { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes sliderScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-        .gate-music-btns{display:flex;gap:12px;justify-content:center;margin-top:8px;flex-wrap:wrap}
-        .gate-music-btn{padding:10px 24px;border:1px solid rgba(255,255,255,.6);border-radius:999px;color:#fff;font-family:'Jost',sans-serif;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;background:rgba(255,255,255,.15);transition:background .2s}
-        .gate-music-btn:hover{background:rgba(255,255,255,.3)}
-        .gate-music-btn.primary{background:var(--accent2);border-color:var(--accent2)}
+        .gate-music-btns{display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+        .gate-music-btn{padding:12px 28px;border:1.5px solid rgba(255,255,255,.55);border-radius:999px;color:#fff;font-family:'Jost',sans-serif;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);transition:all .25s;display:inline-flex;align-items:center;gap:6px}
+        .gate-music-btn:hover{background:rgba(255,255,255,.22);transform:translateY(-2px)}
+        .gate-music-btn.primary{background:var(--accent2,#78866b);border-color:transparent;box-shadow:0 8px 28px rgba(0,0,0,.25)}
       `;
       return `
         *{box-sizing:border-box}
