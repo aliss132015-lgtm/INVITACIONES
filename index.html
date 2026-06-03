@@ -2104,68 +2104,9 @@
           </div>
         </details>
 
-        <details>
-          <summary><i data-lucide="database"></i> Integración Supabase (RSVP · Deseos · Canciones)</summary>
-          <div style="margin-top:12px;padding:12px;background:rgba(185,142,84,.08);border:1px solid var(--line);border-radius:var(--radius);font-size:.8rem;line-height:1.6;color:var(--muted)">
-            <strong style="color:var(--ink)">¿Qué es Supabase?</strong><br/>
-            Base de datos gratuita en la nube. Con ella el RSVP, los buenos deseos y las sugerencias de canciones se guardan en tiempo real y funcionan en Netlify, Vercel, Hostinger y GitHub Pages.<br/><br/>
-            <strong style="color:var(--ink)">Pasos rápidos:</strong><br/>
-            1. Entra a <a href="https://supabase.com" target="_blank" style="color:var(--gold)">supabase.com</a> → Nuevo proyecto.<br/>
-            2. En SQL Editor ejecuta el script de abajo.<br/>
-            3. Ve a Project Settings → API y copia URL y anon key.<br/>
-          </div>
-          <details style="margin-top:12px">
-            <summary style="font-size:.75rem;color:var(--muted);text-transform:none;letter-spacing:0">Ver script SQL</summary>
-            <pre style="margin-top:8px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);font-size:.7rem;overflow:auto;color:var(--ink)">create table if not exists rsvp (
-  id uuid primary key default gen_random_uuid(),
-  event_id text not null,
-  guest_id text,
-  guest_name text,
-  passes int,
-  status text check (status in ('confirmed','pending','declined')),
-  created_at timestamptz default now()
-);
-
-create table if not exists wishes (
-  id uuid primary key default gen_random_uuid(),
-  event_id text not null,
-  author text not null,
-  message text not null,
-  created_at timestamptz default now()
-);
-
-create table if not exists songs (
-  id uuid primary key default gen_random_uuid(),
-  event_id text not null,
-  song text not null,
-  author text,
-  created_at timestamptz default now()
-);
-
--- Permitir acceso público (ajusta RLS según necesidades)
-alter table rsvp enable row level security;
-alter table wishes enable row level security;
-alter table songs enable row level security;
-
-create policy "public read rsvp" on rsvp for select using (true);
-create policy "public insert rsvp" on rsvp for insert with check (true);
-create policy "public read wishes" on wishes for select using (true);
-create policy "public insert wishes" on wishes for insert with check (true);
-create policy "public read songs" on songs for select using (true);
-create policy "public insert songs" on songs for insert with check (true);</pre>
-          </details>
-          <div class="field-grid" style="margin-top:12px">
-            <div class="field full">
-              <label for="supabaseUrl">URL del proyecto</label>
-              <input id="supabaseUrl" data-key="supabaseUrl" placeholder="https://xxxx.supabase.co" />
-            </div>
-            <div class="field full">
-              <label for="supabaseKey">Anon Key (pública)</label>
-              <input id="supabaseKey" data-key="supabaseKey" placeholder="eyJhbGci..." />
-            </div>
-          </div>
-          <p style="margin-top:8px;font-size:.72rem;color:var(--muted)">La anon key es segura para incluir en el HTML público.</p>
-        </details>
+        <!-- Supabase config: oculto, valores preconfigurados -->
+        <input type="hidden" id="supabaseUrl" data-key="supabaseUrl" />
+        <input type="hidden" id="supabaseKey" data-key="supabaseKey" />
       </form>
     </aside>
 
