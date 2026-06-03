@@ -2673,7 +2673,7 @@
       });
 
       // ── PUBLISH MODAL ──
-      $("#publishGH").addEventListener("click", () => {
+      $("#publishGH").addEventListener("click", async () => {
         if (!state.githubToken) {
           $("#settingsPanel").classList.add("open");
           lucide.createIcons();
@@ -2682,7 +2682,14 @@
         }
         const slug = slugify(state.names);
         $("#publishSlug").value = slug;
-        $("#slugPreview").textContent = `${GH_OWNER}.github.io/${slug}/`;
+        // Detectar owner real del token
+        try {
+          const user = await getGitHubUser();
+          $("#slugPreview").textContent = `${user.login}.github.io/${slug}/`;
+          $("#slugPreview").dataset.owner = user.login;
+        } catch {
+          $("#slugPreview").textContent = `tu-usuario.github.io/${slug}/`;
+        }
         $("#publishUrlBox").style.display = "none";
         $("#publishProgress").style.display = "none";
         $("#modalConfirm").disabled = false;
@@ -2700,7 +2707,8 @@
 
       $("#publishSlug").addEventListener("input", () => {
         const v = slugify($("#publishSlug").value || state.names);
-        $("#slugPreview").textContent = `${GH_OWNER}.github.io/${v}/`;
+        const owner = $("#slugPreview").dataset.owner || "tu-usuario";
+        $("#slugPreview").textContent = `${owner}.github.io/${v}/`;
       });
 
       $("#modalConfirm").addEventListener("click", async () => {
@@ -3758,50 +3766,66 @@ ${invitationHTML(state, true)}
       return { status: res.status, data: res.status === 204 ? null : await res.json().catch(() => null) };
     }
 
+    async function getGitHubUser() {
+      const res = await fetch("https://api.github.com/user", {
+        headers: {
+          "Authorization": `Bearer ${state.githubToken}`,
+          "Accept": "application/vnd.github+json"
+        }
+      });
+      if (!res.ok) throw new Error("Token inválido o sin permisos.");
+      return res.json();
+    }
+
     async function publishToGitHub(repoName, onProgress = () => {}) {
       if (!state.githubToken) throw new Error("Configura tu GitHub Token primero.");
       const BASE = "https://api.github.com";
       const eventTitle = state.names.replace(/\n/g, " ");
+
+      // 0. Detectar usuario autenticado
+      onProgress("Verificando token...");
+      const user = await getGitHubUser();
+      const owner = user.login; // ← dinámico, no hardcodeado
 
       // 1. Crear repositorio (si no existe)
       onProgress("Creando repositorio...");
       const createRes = await ghFetch(`${BASE}/user/repos`, "POST", {
         name: repoName,
         description: `Invitación digital: ${eventTitle}`,
-        homepage: `https://${GH_OWNER}.github.io/${repoName}/`,
+        homepage: `https://${owner}.github.io/${repoName}/`,
         private: false,
         auto_init: false
       });
-      // 422 = ya existe, está bien
       if (createRes.status !== 201 && createRes.status !== 422) {
         throw new Error(createRes.data?.message || "No se pudo crear el repositorio");
       }
 
-      // Esperar un momento si el repo es nuevo
+      // Esperar si el repo es nuevo
       if (createRes.status === 201) {
         onProgress("Inicializando repositorio...");
-        await new Promise(r => setTimeout(r, 1800));
+        await new Promise(r => setTimeout(r, 2000));
       }
 
       // 2. Subir index.html
       onProgress("Subiendo invitación...");
       const html = buildExportPage();
       const content = btoa(unescape(encodeURIComponent(html)));
-      const fileUrl = `${BASE}/repos/${GH_OWNER}/${repoName}/contents/index.html`;
-
-      // Verificar si ya existe (para obtener SHA)
+      const fileUrl = `${BASE}/repos/${owner}/${repoName}/contents/index.html`;
       const existing = await ghFetch(fileUrl);
       const sha = existing.data?.sha;
 
-      await ghFetch(fileUrl, "PUT", {
+      const uploadRes = await ghFetch(fileUrl, "PUT", {
         message: `Publicar invitación: ${eventTitle}`,
         content,
         ...(sha ? { sha } : {})
       });
+      if (uploadRes.status !== 200 && uploadRes.status !== 201) {
+        throw new Error("Error al subir el archivo HTML.");
+      }
 
       // 3. Activar GitHub Pages
       onProgress("Activando GitHub Pages...");
-      const pagesUrl = `${BASE}/repos/${GH_OWNER}/${repoName}/pages`;
+      const pagesUrl = `${BASE}/repos/${owner}/${repoName}/pages`;
       const pagesExist = await ghFetch(pagesUrl);
       if (pagesExist.status === 404) {
         await ghFetch(pagesUrl, "POST", {
@@ -3810,7 +3834,7 @@ ${invitationHTML(state, true)}
       }
 
       onProgress("¡Publicado! (GitHub Pages activa en ~30 seg)");
-      return `https://${GH_OWNER}.github.io/${repoName}/`;
+      return `https://${owner}.github.io/${repoName}/`;
     }
 
     setInterval(tickCountdowns, 1000);
