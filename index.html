@@ -3123,6 +3123,8 @@
 
       const heroImage = project.heroImageData || project.heroBgUrl;
       const heroStyle = heroImage ? `--hero-bg:url('${escapeHtml(heroImage)}')` : "";
+      const musicSrc = project.musicData || project.musicUrl || "";
+      const ytId = extractYtId(musicSrc);
       const music = musicSrc;
       const sections = project.sections || {};
       const titleFont = project.titleFont || "Cormorant Garamond";
@@ -3144,9 +3146,6 @@
         project.names.replace(/\n/g, " ")
       ].filter(Boolean).join("\n");
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrText)}`;
-      const musicSrc = project.musicData || project.musicUrl || "";
-      const ytId = extractYtId(musicSrc);
-
       const gate = project.entranceType !== "none" ? `
         <div class="invite-gate" data-gate="${escapeHtml(project.entranceType || "seal")}" style="--gate-bg:${escapeHtml(project.entranceBg || project.bgColor)}">
           <div class="gate-center">
