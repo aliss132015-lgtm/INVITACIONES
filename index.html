@@ -1512,6 +1512,30 @@
       font-size: .72rem;
     }
 
+    /* ── RSVP & WISHES & SONGS live styles ── */
+    .rsvp-form-wrap input,
+    .rsvp-form-wrap textarea,
+    .wish-form-wrap input,
+    .wish-form-wrap textarea {
+      color: #fff !important;
+      background: rgba(255,255,255,.15) !important;
+      border: 1px solid rgba(255,255,255,.3) !important;
+    }
+
+    .rsvp-form-wrap input::placeholder,
+    .wish-form-wrap input::placeholder,
+    .wish-form-wrap textarea::placeholder {
+      color: rgba(255,255,255,.5);
+    }
+
+    #wishes-wall article p { margin: 0; font-size: .9rem; line-height: 1.6; }
+    #songs-wall > div { animation: fadeSlide .3s ease; }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .toast {
       position: fixed;
       right: 18px;
@@ -2029,6 +2053,13 @@
           <summary><i data-lucide="message-circle-heart"></i> RSVP y contactos</summary>
           <div class="field-grid">
             <div class="field full">
+              <label for="rsvpMode">Modo RSVP</label>
+              <select id="rsvpMode" data-key="rsvpMode">
+                <option value="whatsapp">Botón WhatsApp</option>
+                <option value="form">Formulario integrado (requiere Supabase)</option>
+              </select>
+            </div>
+            <div class="field full">
               <label for="rsvpText">Texto RSVP</label>
               <textarea id="rsvpText" data-key="rsvpText"></textarea>
             </div>
@@ -2057,6 +2088,83 @@
               <input id="contact2Phone" data-key="contact2Phone" />
             </div>
           </div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="music-4"></i> Sugerencia de canciones</summary>
+          <div class="field-grid">
+            <div class="field full">
+              <label for="songsTitle">Título de sección</label>
+              <input id="songsTitle" data-key="songsTitle" />
+            </div>
+            <div class="field full">
+              <label for="songsText">Subtítulo / instrucción</label>
+              <textarea id="songsText" data-key="songsText"></textarea>
+            </div>
+          </div>
+        </details>
+
+        <details>
+          <summary><i data-lucide="database"></i> Integración Supabase (RSVP · Deseos · Canciones)</summary>
+          <div style="margin-top:12px;padding:12px;background:rgba(185,142,84,.08);border:1px solid var(--line);border-radius:var(--radius);font-size:.8rem;line-height:1.6;color:var(--muted)">
+            <strong style="color:var(--ink)">¿Qué es Supabase?</strong><br/>
+            Base de datos gratuita en la nube. Con ella el RSVP, los buenos deseos y las sugerencias de canciones se guardan en tiempo real y funcionan en Netlify, Vercel, Hostinger y GitHub Pages.<br/><br/>
+            <strong style="color:var(--ink)">Pasos rápidos:</strong><br/>
+            1. Entra a <a href="https://supabase.com" target="_blank" style="color:var(--gold)">supabase.com</a> → Nuevo proyecto.<br/>
+            2. En SQL Editor ejecuta el script de abajo.<br/>
+            3. Ve a Project Settings → API y copia URL y anon key.<br/>
+          </div>
+          <details style="margin-top:12px">
+            <summary style="font-size:.75rem;color:var(--muted);text-transform:none;letter-spacing:0">Ver script SQL</summary>
+            <pre style="margin-top:8px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);font-size:.7rem;overflow:auto;color:var(--ink)">create table if not exists rsvp (
+  id uuid primary key default gen_random_uuid(),
+  event_id text not null,
+  guest_id text,
+  guest_name text,
+  passes int,
+  status text check (status in ('confirmed','pending','declined')),
+  created_at timestamptz default now()
+);
+
+create table if not exists wishes (
+  id uuid primary key default gen_random_uuid(),
+  event_id text not null,
+  author text not null,
+  message text not null,
+  created_at timestamptz default now()
+);
+
+create table if not exists songs (
+  id uuid primary key default gen_random_uuid(),
+  event_id text not null,
+  song text not null,
+  author text,
+  created_at timestamptz default now()
+);
+
+-- Permitir acceso público (ajusta RLS según necesidades)
+alter table rsvp enable row level security;
+alter table wishes enable row level security;
+alter table songs enable row level security;
+
+create policy "public read rsvp" on rsvp for select using (true);
+create policy "public insert rsvp" on rsvp for insert with check (true);
+create policy "public read wishes" on wishes for select using (true);
+create policy "public insert wishes" on wishes for insert with check (true);
+create policy "public read songs" on songs for select using (true);
+create policy "public insert songs" on songs for insert with check (true);</pre>
+          </details>
+          <div class="field-grid" style="margin-top:12px">
+            <div class="field full">
+              <label for="supabaseUrl">URL del proyecto</label>
+              <input id="supabaseUrl" data-key="supabaseUrl" placeholder="https://xxxx.supabase.co" />
+            </div>
+            <div class="field full">
+              <label for="supabaseKey">Anon Key (pública)</label>
+              <input id="supabaseKey" data-key="supabaseKey" placeholder="eyJhbGci..." />
+            </div>
+          </div>
+          <p style="margin-top:8px;font-size:.72rem;color:var(--muted)">La anon key es segura para incluir en el HTML público.</p>
         </details>
       </form>
     </aside>
@@ -2095,6 +2203,7 @@
       ["gallery", "Galería"],
       ["rsvp", "Confirmación RSVP"],
       ["wishes", "Buenos deseos"],
+      ["songs", "Sugerencia de canciones"],
       ["contacts", "Contactos"]
     ];
 
@@ -2180,6 +2289,11 @@
       contact1Phone: "50200000001",
       contact2Name: "Fernando",
       contact2Phone: "50200000002",
+      supabaseUrl: "",
+      supabaseKey: "",
+      rsvpMode: "whatsapp",
+      songsTitle: "Sugerencia de Canciones",
+      songsText: "¿Qué canción no puede faltar en nuestra fiesta?",
       sections: {
         guest: true,
         countdown: true,
@@ -2190,6 +2304,7 @@
         gallery: true,
         rsvp: true,
         wishes: true,
+        songs: false,
         contacts: true
       },
       itinerary: [
@@ -2974,28 +3089,66 @@
           </div>
         </section>` : "";
 
+      const hasSupabase = !!(project.supabaseUrl && project.supabaseKey);
+      const eventId = escapeHtml(slugify(project.names));
+
       const rsvp = sections.rsvp ? `
-        <section class="invite-section reveal">
+        <section class="invite-section reveal" id="sec-rsvp">
           <div class="invite-inner">
             <div class="section-icon">${inviteIcon(project.rsvpIcon)}</div>
             <h3>Confirma tu asistencia</h3>
             <p>${plainText(project.rsvpText)}</p>
+            ${project.rsvpDeadline ? `<p style="font-size:.82rem;opacity:.75">Fecha límite: <strong>${escapeHtml(project.rsvpDeadline)}</strong></p>` : ""}
+            ${(project.rsvpMode === "form" && hasSupabase) ? `
+            <div class="rsvp-form-wrap" style="margin-top:20px">
+              <div id="rsvp-status-msg" style="display:none;margin-bottom:14px;padding:10px 14px;border-radius:6px;font-size:.88rem"></div>
+              <div class="rsvp-actions" id="rsvp-buttons">
+                <button class="link-button" type="button" data-rsvp-action="confirmed" style="background:#4caf82">✓ Confirmar</button>
+                <button class="link-button" type="button" data-rsvp-action="pending" style="background:#f39c12">― Pendiente</button>
+                <button class="link-button" type="button" data-rsvp-action="declined" style="background:#c0392b">✕ Declinar</button>
+              </div>
+            </div>` : `
             <div class="rsvp-actions">
-              <a class="link-button" href="${escapeHtml(project.rsvpUrl || "#")}" target="_blank" rel="noreferrer">Confirmar asistencia</a>
-              <button class="link-button" type="button" data-demo-alert>Enviar buenos deseos</button>
-            </div>
+              <a class="link-button" href="${escapeHtml(project.rsvpUrl || "#")}" target="_blank" rel="noreferrer">Confirmar asistencia por WhatsApp</a>
+            </div>`}
           </div>
         </section>` : "";
 
       const wishes = sections.wishes ? `
-        <section class="invite-section reveal">
+        <section class="invite-section reveal" id="sec-wishes">
           <div class="invite-inner">
             <div class="section-icon">${inviteIcon(project.wishesIcon)}</div>
             <h3>Buenos deseos</h3>
+            ${hasSupabase ? `
+            <div id="wishes-wall" style="display:grid;gap:12px;margin-bottom:22px;max-height:340px;overflow-y:auto;padding-right:4px"></div>
+            <div class="wish-form-wrap" style="display:grid;gap:10px;max-width:520px;margin:0 auto">
+              <input id="wish-author" placeholder="Tu nombre" style="padding:10px 12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;border-radius:6px;font-family:inherit;font-size:.9rem" />
+              <textarea id="wish-msg" placeholder="Escribe tu mensaje de buenos deseos..." style="padding:10px 12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;border-radius:6px;font-family:inherit;font-size:.9rem;min-height:80px;resize:vertical"></textarea>
+              <button type="button" id="wish-send" class="link-button" style="width:100%;justify-content:center">Enviar buenos deseos 💌</button>
+              <div id="wish-status" style="font-size:.8rem;text-align:center;min-height:18px"></div>
+            </div>` : `
             <article class="note-card">
               <p><em>"Que esta nueva etapa esté llena de amor, alegría y bendiciones."</em></p>
               <h4>Con cariño, sus invitados</h4>
             </article>
+            <p style="font-size:.78rem;opacity:.65;margin-top:12px">Activa Supabase en el editor para habilitar el muro de mensajes en vivo.</p>`}
+          </div>
+        </section>` : "";
+
+      const songs = sections.songs ? `
+        <section class="invite-section reveal" id="sec-songs">
+          <div class="invite-inner">
+            <div class="section-icon">${inviteIcon("disc")}</div>
+            <h3>${escapeHtml(project.songsTitle || "Sugerencia de Canciones")}</h3>
+            <p>${escapeHtml(project.songsText || "¿Qué canción no puede faltar en nuestra fiesta?")}</p>
+            ${hasSupabase ? `
+            <div id="songs-wall" style="display:grid;gap:10px;margin-bottom:18px;max-height:280px;overflow-y:auto"></div>
+            <div style="display:flex;gap:10px;max-width:520px;margin:0 auto;flex-wrap:wrap">
+              <input id="song-input" placeholder="Nombre de la canción y artista" style="flex:1;min-width:180px;padding:10px 12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;border-radius:6px;font-family:inherit;font-size:.9rem" />
+              <input id="song-author" placeholder="Tu nombre" style="flex:0 0 140px;padding:10px 12px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;border-radius:6px;font-family:inherit;font-size:.9rem" />
+              <button type="button" id="song-send" class="link-button">Sugerir 🎵</button>
+            </div>` : `
+            <article class="note-card"><p>Activa Supabase para recibir sugerencias en vivo.</p></article>`}
           </div>
         </section>` : "";
 
@@ -3033,8 +3186,9 @@
           ${gallery}
           ${rsvp}
           ${wishes}
+          ${songs}
           ${contacts}
-          <footer class="footer-invite">Invitación digital</footer>
+          <footer class="footer-invite">Invitación digital · Creado con Gaby Studio</footer>
         </article>
         ${forExport ? exportScript(project) : ""}
       `;
@@ -3191,9 +3345,135 @@
     function exportScript(project = state) {
       const guestsJson = JSON.stringify(parseGuestsCsv(project.guestsCsv)).replace(/</g, "\\u003c");
       const eventName = project.names.replace(/\n/g, " ");
+      const eventId = slugify(project.names);
+      const hasSupabase = !!(project.supabaseUrl && project.supabaseKey);
+      const supabaseBlock = hasSupabase ? `
+        /* ── SUPABASE ── */
+        var SUPA_URL = ${JSON.stringify(project.supabaseUrl)};
+        var SUPA_KEY = ${JSON.stringify(project.supabaseKey)};
+        var EVENT_ID = ${JSON.stringify(eventId)};
+
+        function supaFetch(path, opts){
+          return fetch(SUPA_URL + "/rest/v1/" + path, Object.assign({
+            headers: {
+              "apikey": SUPA_KEY,
+              "Authorization": "Bearer " + SUPA_KEY,
+              "Content-Type": "application/json",
+              "Prefer": "return=representation"
+            }
+          }, opts));
+        }
+
+        /* ── RSVP ── */
+        var CURRENT_GUEST = null;
+        document.querySelectorAll("[data-rsvp-action]").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            var status = btn.dataset.rsvpAction;
+            var msg = document.getElementById("rsvp-status-msg");
+            var btns = document.getElementById("rsvp-buttons");
+            supaFetch("rsvp", {
+              method: "POST",
+              body: JSON.stringify({
+                event_id: EVENT_ID,
+                guest_id: CURRENT_GUEST ? CURRENT_GUEST.id : "anonimo",
+                guest_name: CURRENT_GUEST ? CURRENT_GUEST.nombre : "Invitado",
+                passes: CURRENT_GUEST ? parseInt(CURRENT_GUEST.pases || 1) : 1,
+                status: status
+              })
+            }).then(function(r){ return r.json(); }).then(function(){
+              var labels = { confirmed: "✓ ¡Asistencia confirmada!", pending: "Quedaste como pendiente.", declined: "Entendemos, gracias por avisar." };
+              var colors = { confirmed: "#4caf82", pending: "#f39c12", declined: "#c0392b" };
+              if(msg){ msg.style.display = "block"; msg.style.background = colors[status] || "#888"; msg.style.color = "#fff"; msg.style.borderRadius = "6px"; msg.textContent = labels[status] || "Respuesta guardada."; }
+              if(btns) btns.style.display = "none";
+            }).catch(function(){
+              if(msg){ msg.style.display = "block"; msg.textContent = "Error al guardar. Intenta de nuevo."; }
+            });
+          });
+        });
+
+        /* ── BUENOS DESEOS ── */
+        function renderWish(w){
+          var el = document.createElement("article");
+          el.style.cssText = "background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:14px 16px;text-align:left";
+          el.innerHTML = '<p style="margin:0;font-style:italic;color:rgba(255,255,255,.92);">"' + escStr(w.message) + '"</p><p style="margin:6px 0 0;font-size:.78rem;color:rgba(255,255,255,.6);">— ' + escStr(w.author) + '</p>';
+          return el;
+        }
+        function loadWishes(){
+          var wall = document.getElementById("wishes-wall");
+          if(!wall) return;
+          supaFetch("wishes?event_id=eq." + encodeURIComponent(EVENT_ID) + "&order=created_at.desc&limit=30")
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+              wall.innerHTML = "";
+              if(!data || !data.length){ wall.innerHTML = '<p style="opacity:.6;font-style:italic">Sé el primero en dejar tu mensaje.</p>'; return; }
+              data.forEach(function(w){ wall.appendChild(renderWish(w)); });
+            });
+        }
+        var wishSend = document.getElementById("wish-send");
+        if(wishSend){
+          wishSend.addEventListener("click", function(){
+            var author = (document.getElementById("wish-author") || {}).value || "";
+            var msg = (document.getElementById("wish-msg") || {}).value || "";
+            var status = document.getElementById("wish-status");
+            if(!author.trim() || !msg.trim()){ if(status) status.textContent = "Por favor escribe tu nombre y mensaje."; return; }
+            wishSend.disabled = true;
+            supaFetch("wishes", {
+              method: "POST",
+              body: JSON.stringify({ event_id: EVENT_ID, author: author.trim(), message: msg.trim() })
+            }).then(function(r){ return r.json(); }).then(function(){
+              document.getElementById("wish-author").value = "";
+              document.getElementById("wish-msg").value = "";
+              if(status){ status.style.color = "#4caf82"; status.textContent = "¡Mensaje enviado! 💌"; }
+              loadWishes();
+            }).catch(function(){
+              if(status){ status.style.color = "#c0392b"; status.textContent = "Error al enviar. Intenta de nuevo."; }
+            }).finally(function(){ wishSend.disabled = false; });
+          });
+        }
+        loadWishes();
+
+        /* ── CANCIONES ── */
+        function loadSongs(){
+          var wall = document.getElementById("songs-wall");
+          if(!wall) return;
+          supaFetch("songs?event_id=eq." + encodeURIComponent(EVENT_ID) + "&order=created_at.desc&limit=30")
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+              wall.innerHTML = "";
+              if(!data || !data.length){ wall.innerHTML = '<p style="opacity:.6;font-style:italic">Aún no hay sugerencias.</p>'; return; }
+              data.forEach(function(s){
+                var el = document.createElement("div");
+                el.style.cssText = "display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);border-radius:6px;padding:10px 12px;";
+                el.innerHTML = '<span style="font-size:1.2rem">🎵</span><div><div style="color:#fff;font-size:.88rem">' + escStr(s.song) + '</div>' + (s.author ? '<div style="color:rgba(255,255,255,.6);font-size:.75rem">— ' + escStr(s.author) + '</div>' : '') + '</div>';
+                wall.appendChild(el);
+              });
+            });
+        }
+        var songSend = document.getElementById("song-send");
+        if(songSend){
+          songSend.addEventListener("click", function(){
+            var song = (document.getElementById("song-input") || {}).value || "";
+            var author = (document.getElementById("song-author") || {}).value || "";
+            if(!song.trim()){ return; }
+            songSend.disabled = true;
+            supaFetch("songs", {
+              method: "POST",
+              body: JSON.stringify({ event_id: EVENT_ID, song: song.trim(), author: author.trim() || null })
+            }).then(function(r){ return r.json(); }).then(function(){
+              document.getElementById("song-input").value = "";
+              loadSongs();
+            }).finally(function(){ songSend.disabled = false; });
+          });
+        }
+        loadSongs();
+      ` : "";
+
       return `<script>
         var INVITA_GUESTS = ${guestsJson};
         var INVITA_EVENT_NAME = ${JSON.stringify(eventName)};
+
+        function escStr(str){ return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
         function qrUrl(text){
           return "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(text);
         }
@@ -3207,6 +3487,7 @@
           var id = new URLSearchParams(location.search).get("guest");
           var guest = INVITA_GUESTS.find(function(item){ return item.id === id; }) || INVITA_GUESTS[0];
           if(!guest) return;
+          ${hasSupabase ? "CURRENT_GUEST = guest;" : ""}
           var name = document.querySelector("[data-guest-name]");
           var passes = document.querySelector("[data-guest-passes]");
           var table = document.querySelector("[data-guest-table]");
@@ -3260,9 +3541,7 @@
             else { audio.pause(); btn.textContent = "♪"; }
           });
         });
-        document.querySelectorAll("[data-demo-alert]").forEach(function(btn){
-          btn.addEventListener("click", function(){ alert("Gracias por tus buenos deseos."); });
-        });
+        ${supabaseBlock}
       <\/script>`;
     }
 
@@ -3341,19 +3620,43 @@
       const fullHtml = buildExportPage();
       const zip = new JSZip();
       zip.file("index.html", fullHtml);
+      const hasSupabase = !!(state.supabaseUrl && state.supabaseKey);
       zip.file("README.md", [
-        "# Invitación digital",
+        "# Invitación digital — " + state.names.replace(/\n/g, " "),
         "",
-        "Proyecto estático generado con Invita Studio.",
+        "Proyecto estático generado con **Gaby Studio**.",
+        "No requiere instalación ni compilación — 100% HTML/CSS/JS.",
         "",
-        "## Subir a hosting",
-        "- Netlify: arrastra esta carpeta o el ZIP al panel de Deploys.",
-        "- Vercel: crea un proyecto nuevo y sube estos archivos.",
-        "- Hostinger: sube `index.html` al administrador de archivos.",
-        "- GitHub Pages: publica este archivo en la rama configurada.",
+        "## 🚀 Subir a hosting",
         "",
-        "No necesita instalación ni compilación."
-      ].join("\\n"));
+        "### Netlify (recomendado — más fácil)",
+        "1. Ve a https://netlify.com → Login → Sites",
+        "2. Arrastra el ZIP directamente o la carpeta descomprimida",
+        "3. Listo — obtienes URL gratis tipo `tu-nombre.netlify.app`",
+        "",
+        "### Vercel",
+        "1. Ve a https://vercel.com → New Project → Upload",
+        "2. Sube la carpeta descomprimida",
+        "",
+        "### GitHub Pages",
+        "1. Crea repositorio → sube `index.html`",
+        "2. Settings → Pages → Source: main branch",
+        "",
+        "### Hostinger",
+        "1. Panel → Administrador de archivos → public_html",
+        "2. Sube `index.html`",
+        "",
+        "## 🔗 Links por invitado",
+        "Cada familia tiene su propio link:",
+        "```",
+        "https://tu-dominio.netlify.app/?guest=familia-lopez",
+        "https://tu-dominio.netlify.app/?guest=familia-garcia",
+        "```",
+        "Los links están en el constructor bajo 'Invitados por familia'.",
+        "",
+        hasSupabase ? "## ✅ Supabase configurado" : "## ⚠️ Supabase no configurado",
+        hasSupabase ? "RSVP, buenos deseos y canciones están activos y guardan datos en tiempo real." : "RSVP, buenos deseos y canciones están en modo básico (solo WhatsApp). Configura Supabase en el editor para activarlos.",
+      ].join("\n"));
 
       const blob = await zip.generateAsync({ type: "blob" });
       const a = document.createElement("a");
