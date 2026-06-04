@@ -3362,7 +3362,14 @@
       return `
         ${gate}
         <article class="invitation" data-effect="${escapeHtml(project.revealEffect || "slide")}" style="--accent:${escapeHtml(project.accentColor)};--accent2:${escapeHtml(project.accent2Color)};--bg:${escapeHtml(project.bgColor)};--text:${escapeHtml(project.textColor)};--panel-rgb:${panelRgb};--panel-alpha:${panelAlpha};--icon-color:${escapeHtml(project.iconColor || "#ffffff")};--icon-size:${Number(project.iconSize || 58)}px;--page-bg:${pageBg};--title-font:'${escapeHtml(titleFont)}', serif">
-          ${ytId ? `<button class="music-floating" type="button" data-music title="Pausar/reproducir música">♪</button><div id="yt-bg-player"></div>` : music && project.showMusic ? `<button class="music-floating" type="button" data-music title="Pausar/reproducir música">♪</button><audio id="bg-audio" loop src="${escapeHtml(music)}"></audio>` : ""}
+          ${ytId ? `
+            <button class="music-floating" type="button" data-music title="Pausar/reproducir música">♪</button>
+            <iframe id="yt-bg"
+              src="https://www.youtube.com/embed/${escapeHtml(ytId)}?enablejsapi=1&controls=0&loop=1&playlist=${escapeHtml(ytId)}&autoplay=0&mute=0&rel=0"
+              style="position:fixed;width:1px;height:1px;bottom:0;left:0;opacity:.01;pointer-events:none;border:0"
+              allow="autoplay; encrypted-media"
+              frameborder="0"></iframe>` :
+          music && project.showMusic ? `<button class="music-floating" type="button" data-music title="Pausar/reproducir música">♪</button><audio id="bg-audio" loop src="${escapeHtml(music)}"></audio>` : ""}
           <section class="hero-invite" style="${heroStyle}">
             <div>
               <p class="invite-kicker">${escapeHtml(project.kicker)}</p>
@@ -3695,21 +3702,21 @@
         tickCountdowns();
         activateReveals();
         setInterval(tickCountdowns, 1000);
-        /* ── MÚSICA (MP3 directo o YouTube) ── */
+        /* ── MÚSICA ── */
         var ytVideoId = ${JSON.stringify(ytId || "")};
-        var ytMuted   = false;
+        var ytPlaying = false;
+
+        function ytCmd(func) {
+          var f = document.getElementById("yt-bg");
+          if (!f) return;
+          f.contentWindow.postMessage(JSON.stringify({ event:"command", func:func, args:[] }), "*");
+        }
 
         function startMusic(withMusic) {
           if (!withMusic) return;
           if (ytVideoId) {
-            // Crear iframe YT dinámicamente tras interacción del usuario
-            var container = document.getElementById("yt-bg-player");
-            if (container && !container.querySelector("iframe")) {
-              container.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;bottom:0;left:0";
-              container.innerHTML = '<iframe src="https://www.youtube.com/embed/' + ytVideoId +
-                '?autoplay=1&loop=1&playlist=' + ytVideoId + '&controls=0&mute=0&enablejsapi=1" ' +
-                'style="width:200px;height:200px" allow="autoplay; encrypted-media" frameborder="0"></iframe>';
-            }
+            // Pequeño delay para que el iframe haya cargado
+            setTimeout(function(){ ytCmd("playVideo"); ytPlaying = true; }, 800);
           } else {
             var a = document.getElementById("bg-audio");
             if (a) a.play().catch(function(){});
@@ -3718,13 +3725,8 @@
 
         function toggleMusic(btn) {
           if (ytVideoId) {
-            var iframe = document.querySelector("#yt-bg-player iframe");
-            if (!iframe) { startMusic(true); btn.textContent = "Ⅱ"; return; }
-            ytMuted = !ytMuted;
-            iframe.contentWindow.postMessage(JSON.stringify({
-              event: "command", func: ytMuted ? "mute" : "unMute", args: []
-            }), "*");
-            btn.textContent = ytMuted ? "♪" : "Ⅱ";
+            if (ytPlaying) { ytCmd("pauseVideo"); ytPlaying = false; btn.textContent = "♪"; }
+            else { ytCmd("playVideo"); ytPlaying = true; btn.textContent = "Ⅱ"; }
           } else {
             var a = document.getElementById("bg-audio");
             if (!a) return;
@@ -3733,12 +3735,20 @@
           }
         }
 
+        // Añadir origin al iframe para que postMessage funcione
+        window.addEventListener("load", function() {
+          var f = document.getElementById("yt-bg");
+          if (f && !f.src.includes("origin=")) {
+            f.src = f.src + "&origin=" + encodeURIComponent(location.origin);
+          }
+        });
+
         document.querySelectorAll("[data-open-invite]").forEach(function(btn){
           btn.addEventListener("click", function(){
             var gate = btn.closest(".invite-gate");
             if (gate) gate.classList.add("is-open");
             var withMusic = btn.dataset.withMusic !== "0";
-            setTimeout(function(){ startMusic(withMusic); }, 300);
+            startMusic(withMusic);
             activateReveals();
           });
         });
