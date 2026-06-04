@@ -770,8 +770,8 @@
     }
 
     .invite-section {
-      padding: clamp(54px, 9vw, 94px) 24px;
-      border-bottom: 1px solid rgba(47,41,36,.08);
+      padding: clamp(44px, 8vw, 80px) 20px;
+      border-bottom: none;
       background: transparent;
     }
 
@@ -3926,12 +3926,13 @@ ${invitationHTML(state, true)}
       `;
       return `
         *{box-sizing:border-box}
-        body{margin:0;background:var(--bg,#f7f2ea);font-family:"Jost",Arial,sans-serif}
+        html,body{margin:0;padding:0;background:var(--bg,#f7f2ea);font-family:"Jost",Arial,sans-serif;width:100%;overflow-x:hidden}
         button,input,textarea,select{font:inherit}
         button{cursor:pointer}
         ${animCSS}
         ${inviteOnly}
-        .invitation{max-width:520px;margin:0 auto;box-shadow:0 0 0 1px rgba(0,0,0,.04)}
+        .invitation{max-width:100%;margin:0;box-shadow:none}
+        @media(min-width:600px){.invitation{max-width:520px;margin:0 auto;box-shadow:0 2px 24px rgba(0,0,0,.08)}}
         @media(min-width:760px){.invitation{max-width:760px}}
         @media(max-width:620px){
           .countdown{grid-template-columns:repeat(2,1fr)}
